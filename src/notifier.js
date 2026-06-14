@@ -131,7 +131,7 @@ async function sendWelcome(subscriber, baseUrl, { spotNames, token }) {
       process.env.TWILIO_AUTH_TOKEN
     );
     await twilio.messages.create({
-      body: `🤙 Welcome to Dude, It's Firing!\n\nYou're connected to: ${spotNames}.\n\nWe're watching 24/7. The moment it's worth paddling out — you'll know.\n\nUnsub: ${unsubUrl}`,
+      body: `🤙 Dude, It's Firing! You're in! We're watching your spots. You'll get a text when it's on. Stop: ${unsubUrl}`,
       from: process.env.TWILIO_FROM_NUMBER,
       to:   subscriber.contact,
     });
