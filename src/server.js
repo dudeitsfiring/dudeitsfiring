@@ -42,9 +42,9 @@ app.post('/subscribe', async (req, res) => {
   const { name, contact, type, tier, spots: spotIds } = req.body;
 
   // Normalize phone number — ensure + prefix
-  if (type === 'sms' && contact && !contact.startsWith('+')) {
-    contact = '+' + contact.replace(/[^0-9]/g, '');
-  }
+  const normalizedContact = (type === 'sms' && contact && !contact.startsWith('+'))
+    ? '+' + contact.replace(/[^0-9]/g, '')
+    : contact;
 
   if (!name || !contact || !type || !spotIds || !spotIds.length)
     return res.status(400).json({ error: 'Missing required fields' });
@@ -65,7 +65,7 @@ app.post('/subscribe', async (req, res) => {
   try {
     // Create Stripe checkout session — user pays after trial
     const session = await createCheckoutSession({
-      name, contact, type, tier: tier||'locals', spots: spotIds, baseUrl: BASE_URL
+      name, contact: normalizedContact, type, tier: tier||'locals', spots: spotIds, baseUrl: BASE_URL
     });
     res.json({ success: true, checkoutUrl: session.url });
   } catch(err) {
