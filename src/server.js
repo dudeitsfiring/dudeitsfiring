@@ -41,6 +41,11 @@ app.get('/api/admin/stripe-test', requireAdmin, async (req, res) => {
 app.post('/subscribe', async (req, res) => {
   const { name, contact, type, tier, spots: spotIds } = req.body;
 
+  // Normalize phone number — ensure + prefix
+  if (type === 'sms' && contact && !contact.startsWith('+')) {
+    contact = '+' + contact.replace(/[^0-9]/g, '');
+  }
+
   if (!name || !contact || !type || !spotIds || !spotIds.length)
     return res.status(400).json({ error: 'Missing required fields' });
   if (!['sms','email'].includes(type))
