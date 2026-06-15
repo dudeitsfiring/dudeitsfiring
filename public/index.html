@@ -498,7 +498,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
           <p class="fhint" id="chint">Texts sent 6am–8pm at your spot's local time. One purpose: surf alerts.</p>
         </div>
         <div class="f">
-          <label>Your spots <span id="scount" class="sc"></span></label>
+          <label>YOUR SPOTS <span id="scount" class="sc" style="font-weight:600;color:#007AFF"></span></label>
           <div class="spot-search-wrap">
             <span class="search-ico">🔍</span>
             <input type="text" id="ssearch" placeholder="Search spots…" oninput="filterSpots(this.value)" style="padding-left:36px">
@@ -799,8 +799,14 @@ function selectTier(tier, el) {
   el.classList.add('active');
   const limit = TIER_LIMITS[tier];
   if (selectedSpots.size > limit) {
+    const removed = selectedSpots.size - limit;
     selectedSpots = new Set([...selectedSpots].slice(0, limit));
     renderSpots(allRegions, document.getElementById('ssearch').value);
+    const warn = document.getElementById('limit-warn');
+    warn.style.display = 'block';
+    warn.textContent = `Switched to ${limit}-spot plan — ${removed} spot${removed>1?'s':''} removed. Upgrade to add more.`;
+    warn.style.background = '#FFF3CD';
+    warn.style.color = '#856404';
   }
   checkLimit();
 }
@@ -815,8 +821,18 @@ function checkLimit() {
   } else {
     warn.style.display = 'none';
   }
-  const lbl = limit === Infinity ? '· unlimited' : `· up to ${limit}`;
-  document.getElementById('scount').textContent = selectedSpots.size ? `${selectedSpots.size} selected ${lbl}` : lbl;
+  if (limit === Infinity) {
+    document.getElementById('scount').textContent = selectedSpots.size ? `${selectedSpots.size} selected · unlimited` : '· unlimited';
+  } else {
+    const remaining = limit - selectedSpots.size;
+    if (selectedSpots.size === 0) {
+      document.getElementById('scount').textContent = `· pick up to ${limit}`;
+    } else if (remaining === 0) {
+      document.getElementById('scount').textContent = `${selectedSpots.size} of ${limit} selected · limit reached`;
+    } else {
+      document.getElementById('scount').textContent = `${selectedSpots.size} of ${limit} selected · ${remaining} remaining`;
+    }
+  }
 }
 
 // ── Alert type ────────────────────────────────────
