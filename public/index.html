@@ -39,7 +39,7 @@ nav{
 .nav-btn{font-size:13px;font-weight:600;color:var(--white);background-color:#007AFF !important;padding:9px 22px;border-radius:100px;text-decoration:none}
 
 /* ── Hero ─────────────────────────────────────────── */
-.hero{display:grid;grid-template-columns:.85fr 1.15fr;min-height:100vh;padding-top:0;background:url('/wave-bg.jpg') 30% top/cover no-repeat;position:relative}
+.hero{display:grid;grid-template-columns:.85fr 1.15fr;min-height:100vh;padding-top:0;background:url('/wave-bg.jpg') 15% top/cover no-repeat;position:relative}
 
 .hero-l{
   background:transparent;padding:40px 60px 60px;
@@ -400,14 +400,16 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
 
   </div>
 
-  <!-- SMS mockup — absolutely centered in hero between columns -->
-  <div style="position:absolute;left:42%;transform:translateX(-50%);top:52%;z-index:2;width:300px;text-align:center">
+  <!-- SMS mockup — centered between columns, aligned to form -->
+  <div style="position:absolute;left:0;right:60%;top:0;bottom:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 40px 180px;z-index:2;pointer-events:none">
+  <div style="width:300px;margin:0 auto;text-align:center">
     <div class="msg-time" style="color:rgba(255,255,255,0.7);margin-bottom:10px">Today 6:47 AM</div>
     <div class="msg-bubble" style="text-align:left">
       <p style="font-size:15px;font-weight:700;margin-bottom:8px;text-align:center">🤙 &nbsp;Dude, It's Firing!!&nbsp; 🔥</p>
       <p>Trestles (Lowers) is PUMPING!<br>5ft · 13s · SW swell 🌊<br>Glassy offshore · Tide dropping perfectly<br><br>GO NOW — conditions are dialed! 🏄</p>
     </div>
     <div class="never-spam" style="justify-content:center;margin-top:12px;color:rgba(255,255,255,0.85);text-shadow:0 1px 4px rgba(0,0,0,0.5)">🤙 Never spam · We only text when it's actually worth it</div>
+  </div>
   </div>
 
   <div class="hero-r" id="signup">
