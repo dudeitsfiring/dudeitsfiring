@@ -963,5 +963,272 @@ async function doSubmit() {
 
 loadSpots();
 </script>
+
+<!-- ── MOBILE STICKY CTA ─────────────────────────── -->
+<div class="mobile-cta-bar">
+  <button onclick="openMobileSignup()">Get Alerts When It's Firing 🤙</button>
+</div>
+
+<!-- ── MOBILE STEP-BY-STEP SIGNUP ───────────────── -->
+<div class="mobile-steps" id="mobileSteps">
+
+  <!-- Step 1: Choose Plan -->
+  <div id="mStep1">
+    <div class="step-header">
+      <button class="step-back" onclick="closeMobileSignup()">✕</button>
+      <div class="step-title">Choose your plan</div>
+      <div class="step-progress">
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step-label">Step 1 of 3</div>
+      <div class="step-hed">How many spots do you surf?</div>
+      <div class="step-sub">Pick the plan that fits. You can always upgrade later.</div>
+
+      <div class="mob-tier" id="mob-locals" onclick="mobSelectTier('locals')">
+        <div class="mob-tier-left">
+          <div class="mob-tier-name">Locals Only</div>
+          <div class="mob-tier-desc">5 spots · Less than a burrito</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mob-tier-price">$12<sub>/yr</sub></div>
+        </div>
+      </div>
+
+      <div class="mob-tier selected" id="mob-coast" onclick="mobSelectTier('coast')">
+        <div class="mob-tier-left">
+          <div class="mob-tier-badge">Most Popular</div>
+          <div class="mob-tier-name">Coast Rat</div>
+          <div class="mob-tier-desc">10 spots · Can't stop the froth</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mob-tier-price">$22<sub>/yr</sub></div>
+        </div>
+      </div>
+
+      <div class="mob-tier" id="mob-nomad" onclick="mobSelectTier('nomad')">
+        <div class="mob-tier-left">
+          <div class="mob-tier-name">Full Send Nomad</div>
+          <div class="mob-tier-desc">Unlimited spots · Chase swell anywhere</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mob-tier-price">$39<sub>/yr</sub></div>
+        </div>
+      </div>
+
+      <button class="step-next" onclick="goToStep(2)">Next — Pick Your Spots →</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Pick Spots -->
+  <div id="mStep2" style="display:none">
+    <div class="step-header">
+      <button class="step-back" onclick="goToStep(1)">←</button>
+      <div class="step-title">Pick your spots</div>
+      <div class="step-progress">
+        <div class="step-dot"></div>
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step-label">Step 2 of 3</div>
+      <div class="step-hed">Which spots do you surf?</div>
+      <div class="mob-spot-count" id="mobSpotCount">0 selected · pick up to 10</div>
+      <input class="mob-spot-search" type="text" placeholder="🔍  Search spots..." oninput="mobFilterSpots(this.value)" id="mobSearch">
+      <div class="mob-sbox" id="mobSbox">Loading spots...</div>
+      <button class="step-next" id="mobStep2Next" onclick="goToStep(3)" disabled>Next — Enter Your Number →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Contact Info -->
+  <div id="mStep3" style="display:none">
+    <div class="step-header">
+      <button class="step-back" onclick="goToStep(2)">←</button>
+      <div class="step-title">Almost there!</div>
+      <div class="step-progress">
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot active"></div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step-label">Step 3 of 3</div>
+      <div class="step-hed">Where should we send the alert?</div>
+      <div class="step-sub">We only text when it's genuinely worth surfing.</div>
+
+      <div style="margin-bottom:12px">
+        <label class="step-label">Your name</label>
+        <input class="mob-input" type="text" id="mobName" placeholder="Kelly Slater" autocomplete="name">
+      </div>
+
+      <label class="step-label">Alert method</label>
+      <div class="mob-type-toggle">
+        <button class="mob-type-btn on" id="mobTypeSms" onclick="mobSelType('sms')">📱 Text me</button>
+        <button class="mob-type-btn" id="mobTypeEmail" onclick="mobSelType('email')">✉️ Email me</button>
+      </div>
+
+      <div>
+        <label class="step-label" id="mobContactLabel">Phone number</label>
+        <input class="mob-input" type="tel" id="mobContact" placeholder="+1 (xxx) xxx-xxxx" autocomplete="tel">
+        <div class="mob-hint">Texts sent 6am–8pm at your spot's local time. One purpose: surf alerts.</div>
+      </div>
+
+      <div id="mobErr" style="color:#D00;font-size:14px;margin-bottom:12px;display:none"></div>
+      <button class="step-next" id="mobSubmitBtn" onclick="mobSubmit()">Get My Alerts 🤙</button>
+      <p style="text-align:center;font-size:12px;color:#5A6E7A;margin-top:12px">🔒 Secure · Cancel any time · One-tap unsubscribe</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Mobile signup flow ────────────────────────────
+let mobTier = 'coast';
+let mobSelectedSpots = new Set();
+let mobType = 'sms';
+let mobAllSpots = [];
+const MOB_LIMITS = {locals:5, coast:10, nomad:Infinity};
+
+function openMobileSignup() {
+  document.getElementById('mobileSteps').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (!mobAllSpots.length) mobLoadSpots();
+}
+
+function closeMobileSignup() {
+  document.getElementById('mobileSteps').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function goToStep(n) {
+  document.getElementById('mStep1').style.display = n===1?'block':'none';
+  document.getElementById('mStep2').style.display = n===2?'block':'none';
+  document.getElementById('mStep3').style.display = n===3?'block':'none';
+  document.getElementById('mobileSteps').scrollTop = 0;
+  if (n===2) mobRenderSpots('');
+}
+
+function mobSelectTier(tier) {
+  mobTier = tier;
+  ['locals','coast','nomad'].forEach(t => {
+    document.getElementById('mob-'+t).classList.toggle('selected', t===tier);
+  });
+  // Trim spots if needed
+  const limit = MOB_LIMITS[tier];
+  if (mobSelectedSpots.size > limit) {
+    mobSelectedSpots = new Set([...mobSelectedSpots].slice(0, limit));
+  }
+  mobUpdateCount();
+}
+
+function mobUpdateCount() {
+  const limit = MOB_LIMITS[mobTier];
+  const count = mobSelectedSpots.size;
+  const el = document.getElementById('mobSpotCount');
+  const btn = document.getElementById('mobStep2Next');
+  if (limit === Infinity) {
+    el.textContent = count ? count + ' selected · unlimited' : 'Pick as many as you want';
+  } else {
+    const rem = limit - count;
+    el.textContent = count === 0 ? 'Pick up to ' + limit + ' spots'
+      : count === limit ? count + ' of ' + limit + ' selected · limit reached 🤙'
+      : count + ' of ' + limit + ' selected · ' + rem + ' remaining';
+  }
+  btn.disabled = count === 0;
+}
+
+async function mobLoadSpots() {
+  const data = await fetch('/api/spots').then(r=>r.json());
+  mobAllSpots = [];
+  Object.entries(data.regions).forEach(([region, spots]) => {
+    spots.forEach(s => mobAllSpots.push({...s, region}));
+  });
+  mobRenderSpots('');
+}
+
+function mobFilterSpots(q) { mobRenderSpots(q); }
+
+function mobRenderSpots(q) {
+  const box = document.getElementById('mobSbox');
+  const limit = MOB_LIMITS[mobTier];
+  const filtered = mobAllSpots.filter(s =>
+    !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.location.toLowerCase().includes(q.toLowerCase())
+  );
+
+  // Group by region
+  const regions = {};
+  filtered.forEach(s => {
+    if (!regions[s.region]) regions[s.region] = [];
+    regions[s.region].push(s);
+  });
+
+  let html = '';
+  Object.entries(regions).forEach(([region, spots]) => {
+    html += '<div class="mob-region-head">' + region + '</div>';
+    spots.forEach(s => {
+      const on = mobSelectedSpots.has(s.id);
+      const disabled = !on && mobSelectedSpots.size >= limit;
+      html += '<div class="mob-spot' + (on?' on':'') + (disabled?' disabled':'') + '" onclick="mobToggleSpot(\'' + s.id + '\',this)">' +
+        '<div><div class="mob-spot-name">' + s.name + '</div><div class="mob-spot-loc">' + s.location + '</div></div>' +
+        '<div class="mob-check">' + (on?'✓':'') + '</div>' +
+        '</div>';
+    });
+  });
+  box.innerHTML = html || '<div style="text-align:center;padding:20px;color:#5A6E7A">No spots found</div>';
+  mobUpdateCount();
+}
+
+function mobToggleSpot(id, el) {
+  const limit = MOB_LIMITS[mobTier];
+  if (!mobSelectedSpots.has(id) && mobSelectedSpots.size >= limit) return;
+  mobSelectedSpots.has(id) ? mobSelectedSpots.delete(id) : mobSelectedSpots.add(id);
+  mobRenderSpots(document.getElementById('mobSearch').value);
+}
+
+function mobSelType(type) {
+  mobType = type;
+  document.getElementById('mobTypeSms').classList.toggle('on', type==='sms');
+  document.getElementById('mobTypeEmail').classList.toggle('on', type==='email');
+  document.getElementById('mobContact').type = type==='sms'?'tel':'email';
+  document.getElementById('mobContact').placeholder = type==='sms'?'+1 (xxx) xxx-xxxx':'you@email.com';
+  document.getElementById('mobContactLabel').textContent = type==='sms'?'Phone number':'Email address';
+}
+
+async function mobSubmit() {
+  const name = document.getElementById('mobName').value.trim();
+  const contact = document.getElementById('mobContact').value.trim();
+  const err = document.getElementById('mobErr');
+  const btn = document.getElementById('mobSubmitBtn');
+
+  if (!name) { err.textContent='Please enter your name'; err.style.display='block'; return; }
+  if (!contact) { err.textContent='Please enter your '+(mobType==='sms'?'phone number':'email'); err.style.display='block'; return; }
+  if (!mobSelectedSpots.size) { err.textContent='Please select at least one spot'; err.style.display='block'; return; }
+
+  err.style.display='none';
+  btn.disabled=true;
+  btn.textContent='Setting up your alerts...';
+
+  try {
+    const res = await fetch('/subscribe', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, contact, type:mobType, tier:mobTier, spots:[...mobSelectedSpots]})
+    });
+    const data = await res.json();
+    if (!res.ok) { err.textContent=data.error||'Something went wrong'; err.style.display='block'; btn.disabled=false; btn.textContent='Get My Alerts 🤙'; return; }
+    if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+  } catch(e) {
+    err.textContent='Network error — please try again';
+    err.style.display='block';
+    btn.disabled=false;
+    btn.textContent='Get My Alerts 🤙';
+  }
+}
+</script>
+
 </body>
 </html>

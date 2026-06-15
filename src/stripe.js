@@ -31,7 +31,6 @@ async function createCheckoutSession({ name, contact, type, tier, spots, baseUrl
     }],
     // Trial period — first 30 days free OR until first alert fires
     subscription_data: {
-      trial_period_days: 30,
       metadata: {
         name,
         contact,
