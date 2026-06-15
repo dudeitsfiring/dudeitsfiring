@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤙</text></svg>">
   <link rel="apple-touch-icon" href="/favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,13 +42,13 @@ nav{
 .hero{display:grid;grid-template-columns:1.05fr .95fr;min-height:100vh;padding-top:72px;background:url('/wave-bg.jpg') center top/cover no-repeat;position:relative}
 
 .hero-l{
-  background:transparent;padding:110px 60px 60px;
+  background:transparent;padding:80px 60px 60px;
   display:flex;flex-direction:column;justify-content:flex-start;
   position:relative;overflow:hidden;min-height:100vh;
 }
 .hero::before{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(to bottom, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.92) 25%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.0) 75%);
+  background:linear-gradient(to bottom, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.75) 20%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.0) 65%);
   pointer-events:none;z-index:0;
 }
 .hero-l{z-index:1}
@@ -57,21 +56,21 @@ nav{
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:#1E6FA8;margin-bottom:20px;position:relative}
 h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(72px,8vw,108px);font-weight:700;line-height:.96;color:#071A2B;letter-spacing:.5px;margin-bottom:22px;position:relative}
 h1 em{color:#1E6FA8;font-style:normal}
-.hero-sub{font-size:20px;color:#0D2B45;line-height:1.6;max-width:480px;margin-bottom:36px;position:relative;font-weight:500}
+.hero-sub{font-size:24px;color:#0D2B45;line-height:1.5;max-width:520px;margin-bottom:24px;position:relative;font-weight:600}
 
 /* iPhone SMS */
-.iphone{background:#F2F2F7;border-radius:22px;max-width:340px;position:relative;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.5),0 4px 16px rgba(0,0,0,0.3),inset 0 0 0 1px rgba(255,255,255,0.12);animation:rise .65s cubic-bezier(.16,1,.3,1) both;animation-delay:.25s}
+.iphone{background:transparent;max-width:400px;position:relative;overflow:visible;animation:rise .65s cubic-bezier(.16,1,.3,1) both;animation-delay:.25s}
 @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.iphone-bar{background:var(--white);padding:10px 16px 9px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E5E5EA}
+.iphone-bar{display:none}
 .iphone-contact{display:flex;flex-direction:column;align-items:center;flex:1}
 .iphone-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--bright));display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:2px}
 .iphone-name{font-size:12px;font-weight:600;color:#000;text-align:center}
 .iphone-chevron{font-size:18px;color:#007AFF}
-.iphone-msgs{background:var(--white);padding:14px 14px 16px}
+.iphone-msgs{background:transparent;padding:0}
 .msg-time{text-align:center;font-size:11px;color:#8E8E93;font-weight:500;margin-bottom:12px}
-.msg-bubble{background:#007AFF;border-radius:18px 18px 4px 18px;padding:11px 14px;max-width:90%;margin-left:auto}
-.msg-bubble p{font-size:13px;color:var(--white);line-height:1.55;margin:0}
-.iphone-input{background:var(--white);border-top:1px solid #E5E5EA;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.msg-bubble{background:#007AFF;border-radius:18px 18px 4px 18px;padding:16px 20px;max-width:95%;margin-left:auto;box-shadow:0 4px 20px rgba(0,122,255,0.3)}
+.msg-bubble p{font-size:17px;color:var(--white);line-height:1.6;margin:0}
+.iphone-input{display:none}
 .iphone-field{flex:1;background:#F2F2F7;border-radius:18px;padding:7px 12px;font-size:12px;color:#8E8E93;border:none;font-family:inherit}
 .iphone-send{width:28px;height:28px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center;font-size:13px;color:white;flex-shrink:0}
 .never-spam{display:flex;align-items:center;gap:7px;margin-top:18px;font-size:15px;color:#1E6FA8;font-weight:500;position:relative}
@@ -188,7 +187,7 @@ h1 em{color:#1E6FA8;font-style:normal}
 
 /* Fire card */
 .fire-step{display:flex;flex-direction:column;gap:10px}
-.fire-card{background:linear-gradient(145deg,#0D3B6B,#1A5A9A);border:1.5px solid #2E7AC0;border-radius:14px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;position:relative;overflow:hidden}
+.fire-card{background:linear-gradient(145deg,#1A6FAA,#2E8FCC);border:1.5px solid #4AAEDD;border-radius:14px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;position:relative;overflow:hidden}
 .fire-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:50%;background:radial-gradient(ellipse 80% 100% at 50% 100%,rgba(220,80,0,0.2) 0%,transparent 70%);pointer-events:none}
 .fire-emoji{font-size:44px;line-height:1;margin-bottom:12px;display:block;animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
@@ -211,7 +210,7 @@ h1 em{color:#1E6FA8;font-style:normal}
 .why-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
 .diff-list{display:flex;flex-direction:column;gap:26px;margin-top:30px}
 .diff-row{display:flex;align-items:flex-start;gap:14px}
-.diff-check{width:28px;height:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;color:white;flex-shrink:0;margin-top:1px}
+.diff-check{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;margin-top:1px}
 .diff-text strong{font-size:14px;font-weight:700;color:var(--text);display:block;margin-bottom:3px}
 .diff-text span{font-size:13px;color:var(--muted);line-height:1.65}
 .trust-panel{background:var(--white);border-radius:20px;padding:34px;border:1.5px solid var(--border)}
@@ -244,7 +243,7 @@ h1 em{color:#1E6FA8;font-style:normal}
 .more-pill{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:5px 10px;background:var(--foam);border-radius:100px;font-size:10px;font-weight:600;color:var(--blue)}
 
 /* ── Final CTA ────────────────────────────────────── */
-.cta-section{background:linear-gradient(rgba(5,20,40,0.75),rgba(5,20,40,0.85)),url('/final-bg.jpg') center/cover no-repeat;padding:100px 68px;text-align:center;position:relative;overflow:hidden}
+.cta-section{background:linear-gradient(rgba(5,20,40,0.45),rgba(5,20,40,0.55)),url('/final-bg.jpg') center/cover no-repeat;padding:100px 68px;text-align:center;position:relative;overflow:hidden}
 .cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 700px 500px at 50% 120%,rgba(30,111,168,0.38) 0%,transparent 70%);pointer-events:none}
 .cta-logo-line{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:14px;position:relative}
 .cta-h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(52px,6vw,76px);font-weight:700;color:var(--white);line-height:.98;letter-spacing:.5px;margin-bottom:16px;position:relative}
@@ -409,7 +408,6 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
 <!-- ── PAGE 1: Hero ──────────────────────────────── -->
 <div class="hero">
   <div class="hero-l">
-    <img src="/logo.png" alt="Dude, It's Firing!" style="width:min(520px,90%);height:auto;display:block;margin-bottom:28px">
     <h1>Your friend got<br>the text.<br><em>Did you?</em></h1>
     <p class="hero-sub">We text you when it's firing.<br><span style="font-size:16px;font-weight:400;opacity:0.8">Never miss another session.</span></p>
 
@@ -517,13 +515,6 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
   </div>
 </div>
 
-<!-- ── Strip ─────────────────────────────────────── -->
-<div class="strip">
-  <div class="strip-item"><div class="strip-emoji">📅</div><div class="strip-num">265</div><div class="strip-lbl">US surf spots watched<br>around the clock</div></div>
-  <div class="strip-item"><div class="strip-emoji">🌯</div><div class="strip-num">$12</div><div class="strip-lbl">To start — less than<br>a burrito a year</div></div>
-  <div class="strip-item"><div class="strip-emoji">📡</div><div class="strip-num">0</div><div class="strip-lbl">Alerts sent unless<br>it's genuinely firing</div></div>
-</div>
-
 <!-- ── PAGE 2: How it works ──────────────────────── -->
 <div id="how">
   <div class="section">
@@ -600,7 +591,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
             <div class="fire-chk"><div class="fire-cd">✓</div>Wind</div>
             <div class="fire-chk"><div class="fire-cd">✓</div>Tide</div>
           </div>
-          <div class="fire-title">Dude. It's Firing!</div>
+          <div class="fire-title">🔔 Dude. It's Firing! 🤙</div>
           <div class="fire-body">You get a text.<br>Go surf.</div>
         </div>
         <div class="fire-pill">📱 Alert sent</div>
@@ -618,9 +609,9 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
         <div class="sec-eye" style="color:#000">Why it's different</div>
         <div class="sec-h2">
           <span class="l1">Not a forecast.</span>
-          <span class="l2">A call to action.</span>
+          <span class="l2">A text from your frothing friend.</span>
         </div>
-        <p style="font-size:18px;color:#2A4A5E;font-weight:500;margin-bottom:32px;line-height:1.5">Your frothing friend. Always watching. Never wrong about when to go surf.</p>
+        <p style="font-size:18px;color:#2A4A5E;font-weight:500;margin-bottom:32px;line-height:1.5">We are always watching, and never wrong about when you should get wet.</p>
         <div class="diff-list">
           <div class="diff-row">
             <div class="diff-check" style="color:#22c55e;font-size:18px">✅🔥</div>
@@ -783,13 +774,13 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
     <div class="cta-stat"><div class="cta-stat-num">0</div><div class="cta-stat-lbl">alerts unless it's firing</div></div>
   </div>
   <div class="cta-note">No app · Cancel any time · One-tap unsubscribe in every text</div>
-  <div style="margin-top:18px;font-size:16px;color:rgba(255,255,255,0.6);font-style:italic">Your wave wingman. Making sure you never miss another one. 🤙</div>
+  <p style="font-size:11px;color:rgba(255,255,255,0.2);margin-top:20px;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.6">⚠️ Fine print: We tell you when it's firing, not when it's safe. Wipe-outs, hold-downs, angry locals, and general kookery are entirely your responsibility. Don't be a kook. Surf at your own risk.</p>
 </div>
 
 <!-- ── Footer ────────────────────────────────────── -->
 <footer>
   <div class="f-logo-wrap">
-    <img src="/logo.png" alt="Dude, It's Firing!" style="height:52px;width:auto;display:block;background:rgba(255,255,255,0.12);border-radius:10px;padding:4px 10px">
+    
   </div>
   <div class="f-copy">NOAA buoy data · Live wind · Real-time tides · No app, no BS</div>
 </footer>
