@@ -150,23 +150,36 @@ app.get('/success', (req, res) => {
 <head>
   <meta charset="utf-8">
   <title>You're in! — Dude, It's Firing!</title>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body{font-family:'Inter',sans-serif;text-align:center;padding:80px 24px;background:#FAF8F3;color:#0D1F2D;margin:0}
-    .logo{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;color:#1A4F7A;margin-bottom:8px}
-    h1{font-size:28px;font-weight:700;margin-bottom:12px;color:#0D1F2D}
-    p{color:#5A6E7A;font-size:16px;line-height:1.6;max-width:400px;margin:0 auto 32px}
-    .wave{font-size:64px;margin-bottom:24px;display:block}
-    a{background:#007AFF;color:white;padding:14px 32px;border-radius:100px;font-weight:600;text-decoration:none;font-size:16px}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;text-align:center;min-height:100vh;background:#FAF8F3;color:#0D1F2D;display:flex;align-items:center;justify-content:center;padding:40px 24px}
+    .card{background:#fff;border-radius:24px;padding:48px 40px;max-width:460px;width:100%;box-shadow:0 8px 48px rgba(13,43,69,0.10)}
+    .logo-wrap{margin-bottom:28px}
+    .logo-wrap img{width:260px;height:auto;display:block;margin:0 auto}
+    .divider{width:48px;height:3px;background:#007AFF;border-radius:2px;margin:0 auto 28px}
+    .heading{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;color:#0D2B45;margin-bottom:8px;line-height:1}
+    .sub{font-size:18px;font-weight:600;color:#0D2B45;margin-bottom:16px}
+    .body{color:#5A6E7A;font-size:16px;line-height:1.7;margin-bottom:12px}
+    .patience{font-size:14px;color:#5A6E7A;font-style:italic;margin-bottom:32px;line-height:1.6;padding:14px 18px;background:#F0F7FF;border-radius:12px;border-left:3px solid #007AFF}
+    .btn{display:inline-block;background:#007AFF;color:white;padding:16px 40px;border-radius:100px;font-weight:600;text-decoration:none;font-size:16px;transition:opacity .15s}
+    .btn:hover{opacity:.88}
+    .fine{font-size:12px;color:#A0B0C0;margin-top:20px}
   </style>
 </head>
 <body>
-  <span class="wave">🤙</span>
-  <div class="logo">Dude, It's Firing!</div>
-  <h1>You're in!</h1>
-  <p>We're watching your spots right now. The moment conditions are worth paddling out — you'll get a text. Check your phone for a welcome message.</p>
-  <a href="/">Back to home</a>
+  <div class="card">
+    <div class="logo-wrap">
+      <img src="/logo.png" alt="Dude, It's Firing!">
+    </div>
+    <div class="divider"></div>
+    <div class="sub" style="font-size:28px;margin-bottom:16px">Stoked you are here!</div>
+    <p class="body">We're watching your spots right now. The moment conditions are Firing! — you'll get a text. Check your phone for a welcome message.</p>
+    <div class="patience">P.S. — if it's the off season for your spots, give it a few weeks. We never cry wolf. 🤙</div>
+    <a class="btn" href="/">Back to home</a>
+    <div class="fine">One-tap unsubscribe in every text · No spam · Ever</div>
+  </div>
 </body>
 </html>`);
 });
