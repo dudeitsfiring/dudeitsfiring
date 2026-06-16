@@ -424,7 +424,17 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
 <body>
 
 
+<div style="position:relative">
 <!-- ── PAGE 1: Hero ──────────────────────────────── -->
+<!-- SMS mockup — absolutely centered over hero -->
+<div class="sms-float" style="position:absolute;left:calc(50% - 170px);top:340px;z-index:10;width:340px;text-align:center">
+  <div class="msg-time" style="color:#444;margin-bottom:10px;font-size:12px">Today 6:47 AM</div>
+  <div class="msg-bubble" style="text-align:left">
+    <p style="font-size:19px;font-weight:700;margin-bottom:8px;text-align:center;white-space:nowrap">🤙 Dude, It's Firing!! 🔥</p>
+    <p style="white-space:nowrap">Trestles · 5ft · 13s · SW swell 🌊<br>Glassy · Tide dropping perfectly<br>GO NOW! — conditions are dialed 🏄</p>
+  </div>
+</div>
+
 <div class="hero">
   <div class="hero-l">
     <h1>Your friend got<br>the text. <em>Did you?</em></h1>
@@ -437,15 +447,6 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
       </div>
     </div>
 
-  </div>
-
-  <!-- SMS mockup — fixed position at horizon center -->
-  <div class="sms-float" style="position:absolute;left:0;right:0;margin:0 auto;top:196px;z-index:2;width:340px;text-align:center">
-    <div class="msg-time" style="color:#444;margin-bottom:10px;font-size:12px">Today 6:47 AM</div>
-    <div class="msg-bubble" style="text-align:left">
-      <p style="font-size:19px;font-weight:700;margin-bottom:8px;text-align:center">🤙 &nbsp;Dude, It's Firing!!&nbsp; 🔥</p>
-      <p style="white-space:nowrap">Trestles · 5ft · 13s · SW swell 🌊<br>Glassy · Tide dropping perfectly<br>GO NOW! — conditions are dialed 🏄</p>
-    </div>
   </div>
 
   <div class="hero-r" id="signup">
