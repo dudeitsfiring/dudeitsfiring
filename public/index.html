@@ -111,7 +111,7 @@ h1 em{color:#1E6FA8;font-style:normal}
 .tier-check{width:18px;height:18px;border-radius:50%;background:var(--imessage);display:none;align-items:center;justify-content:center;flex-shrink:0}
 .tier.active .tier-check{display:flex}
 .tier-check span{color:white;font-size:10px;line-height:1}
-.tier-desc{font-size:16px;font-weight:600;color:var(--muted)}
+.tier-desc{font-size:14px;font-weight:400;color:var(--muted)}
 
 /* Fields */
 .f{margin-bottom:14px}
@@ -432,11 +432,11 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
   </div>
 
   <!-- SMS mockup — fixed position at horizon center -->
-  <div class="sms-float" style="position:absolute;left:calc(50% - 200px);top:196px;z-index:2;width:300px;text-align:center">
+  <div class="sms-float" style="position:absolute;left:50%;transform:translateX(-50%);top:196px;z-index:2;width:340px;text-align:center">
     <div class="msg-time" style="color:#444;margin-bottom:10px;font-size:12px">Today 6:47 AM</div>
     <div class="msg-bubble" style="text-align:left">
       <p style="font-size:19px;font-weight:700;margin-bottom:8px;text-align:center">🤙 &nbsp;Dude, It's Firing!!&nbsp; 🔥</p>
-      <p>Trestles · 5ft · 13s · SW swell 🌊<br>Glassy · Tide dropping perfectly<br>GO NOW! — conditions are dialed 🏄</p>
+      <p style="white-space:nowrap">Trestles · 5ft · 13s · SW swell 🌊<br>Glassy · Tide dropping perfectly<br>GO NOW! — conditions are dialed 🏄</p>
     </div>
   </div>
 
@@ -456,7 +456,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
                 <div class="tier-check"><span>✓</span></div>
               </div>
             </div>
-            <div class="tier-desc">5 spots · Less than a burrito</div>
+            <div class="tier-desc"><strong style="font-size:16px;color:#0D2B45">5 spots</strong> <span style="font-size:13px;font-weight:400">· Less than a burrito</span></div>
           </div>
           <div class="tier active" id="tier-coast" onclick="selectTier('coast',this)">
             <div class="tier-popular">Most Popular</div>
@@ -467,7 +467,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
                 <div class="tier-check"><span>✓</span></div>
               </div>
             </div>
-            <div class="tier-desc">10 spots · Can't stop the froth</div>
+            <div class="tier-desc"><strong style="font-size:16px;color:#0D2B45">10 spots</strong> <span style="font-size:13px;font-weight:400">· Can't stop the froth</span></div>
           </div>
           <div class="tier active" id="tier-nomad" onclick="selectTier('nomad',this)" style="border:2px solid #007AFF;background:#EBF5FF">
             <div class="tier-top">
@@ -477,7 +477,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
                 <div class="tier-check"><span>✓</span></div>
               </div>
             </div>
-            <div class="tier-desc">Unlimited spots · Chase swell anywhere</div>
+            <div class="tier-desc"><strong style="font-size:16px;color:#0D2B45">Unlimited spots</strong> <span style="font-size:13px;font-weight:400;white-space:nowrap">· Chase swell anywhere</span></div>
           </div>
         </div>
 
@@ -993,7 +993,7 @@ loadSpots();
       <div class="mob-tier" id="mob-locals" onclick="mobSelectTier('locals')">
         <div class="mob-tier-left">
           <div class="mob-tier-name">Locals Only</div>
-          <div class="mob-tier-desc">5 spots · Less than a burrito</div>
+          <div class="mob-tier-desc"><strong>5 spots</strong> · Less than a burrito</div>
         </div>
         <div style="text-align:right">
           <div class="mob-tier-price">$12<sub>/yr</sub></div>
@@ -1004,7 +1004,7 @@ loadSpots();
         <div class="mob-tier-left">
           <div class="mob-tier-badge">Most Popular</div>
           <div class="mob-tier-name">Coast Rat</div>
-          <div class="mob-tier-desc">10 spots · Can't stop the froth</div>
+          <div class="mob-tier-desc"><strong>10 spots</strong> · Can't stop the froth</div>
         </div>
         <div style="text-align:right">
           <div class="mob-tier-price">$22<sub>/yr</sub></div>
@@ -1014,7 +1014,7 @@ loadSpots();
       <div class="mob-tier" id="mob-nomad" onclick="mobSelectTier('nomad')">
         <div class="mob-tier-left">
           <div class="mob-tier-name">Full Send Nomad</div>
-          <div class="mob-tier-desc">Unlimited spots · Chase swell anywhere</div>
+          <div class="mob-tier-desc"><strong>Unlimited spots</strong> · Chase swell anywhere</div>
         </div>
         <div style="text-align:right">
           <div class="mob-tier-price">$39<sub>/yr</sub></div>
