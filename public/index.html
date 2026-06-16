@@ -90,7 +90,10 @@ h1 em{color:#1E6FA8;font-style:normal}
 .ns-dot{width:5px;height:5px;border-radius:50%;background:var(--bright);flex-shrink:0}
 
 /* Form */
-.hero-r{background:transparent;display:flex;align-items:flex-start;justify-content:center;padding:60px 44px 60px 162px}
+.hero-r{background:transparent;display:flex;align-items:flex-start;justify-content:center;padding:60px 44px 60px 162px;position:relative}
+
+/* SMS float — anchored to hero-r, sits in the gap to the left */
+.sms-float{position:absolute;left:-190px;top:220px;z-index:10;width:340px;text-align:center}
 .form-card{background:rgba(255,255,255,0.82);border-radius:20px;padding:32px;box-shadow:0 8px 48px rgba(13,43,69,0.15),0 2px 8px rgba(13,43,69,0.08);width:100%;max-width:400px;backdrop-filter:blur(16px)}
 .form-hed{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px}
 .form-sub{font-size:14px;color:var(--muted);margin-bottom:22px;line-height:1.6}
@@ -292,7 +295,8 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
   nav{padding:0 20px}
   .hero{grid-template-columns:1fr}
   .hero-l{padding:72px 28px 44px;min-height:auto}
-  .hero-r{padding:32px 20px 56px}
+  .hero-r{padding:32px 20px 56px;flex-direction:column;align-items:center}
+  .sms-float{position:static;width:100%;max-width:400px;margin:0 auto 24px auto}
   .flow{grid-template-columns:1fr 1fr;gap:14px}
   .flow-arr{display:none}
   .why-grid{grid-template-columns:1fr}
@@ -345,12 +349,9 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
   .submit{font-size:15px;padding:16px;border-radius:18px}
   .secure{font-size:10px}
 
-  /* SMS box — hide absolute version, show inline on mobile */
-  .sms-float{display:none !important}
-@media(max-width:1200px){
-  .sms-float{display:none !important}
-}
-  .sms-inline{display:block !important}
+  /* SMS box — keep in-flow on mobile, hide the inline duplicate */
+  .sms-float{position:static !important;width:100% !important;max-width:100% !important;margin:0 auto 20px auto !important}
+  .sms-inline{display:none !important}
   
   /* Hero single column on mobile */
   .hero{background-position:60% top !important}
@@ -429,15 +430,6 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
 
 <div style="position:relative">
 <!-- ── PAGE 1: Hero ──────────────────────────────── -->
-<!-- SMS mockup — absolutely centered over hero -->
-<div class="sms-float" style="position:absolute;left:50%;margin-left:-490px;top:220px;z-index:10;width:340px;text-align:center">
-  <div class="msg-time" style="color:#444;margin-bottom:10px;font-size:12px">Today 6:47 AM</div>
-  <div class="msg-bubble" style="text-align:left">
-    <p style="font-size:19px;font-weight:700;margin-bottom:8px;text-align:center;white-space:nowrap">🤙 Dude, It's Firing!! 🔥</p>
-    <p style="white-space:nowrap">Trestles · 5ft · 13s · SW swell 🌊<br>Glassy · Tide dropping perfectly<br>GO NOW! — conditions are dialed 🏄</p>
-  </div>
-</div>
-
 <div class="hero">
   <div class="hero-l">
     <h1>Your friend got<br>the text. <em>Did you?</em></h1>
@@ -453,6 +445,14 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
   </div>
 
   <div class="hero-r" id="signup">
+    <!-- SMS box: absolutely positioned to the left of hero-r on wide screens, stacks above on narrow -->
+    <div class="sms-float">
+      <div class="msg-time" style="color:#444;margin-bottom:10px;font-size:12px">Today 6:47 AM</div>
+      <div class="msg-bubble" style="text-align:left">
+        <p style="font-size:19px;font-weight:700;margin-bottom:8px;text-align:center;white-space:nowrap">🤙 Dude, It's Firing!! 🔥</p>
+        <p style="white-space:nowrap">Trestles · 5ft · 13s · SW swell 🌊<br>Glassy · Tide dropping perfectly<br>GO NOW! — conditions are dialed 🏄</p>
+      </div>
+    </div>
     <div class="form-card">
       <p class="form-hed">Pick your favorite spots.<br>Get the texts. Go Surf.</p>
       
