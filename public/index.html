@@ -460,7 +460,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
       <div id="form-inner">
         <span class="tier-label">Choose your plan</span>
         <div class="tiers">
-          <div class="tier active" id="tier-locals" onclick="selectTier('locals',this)">
+          <div class="tier" id="tier-locals" onclick="selectTier('locals',this)">
             <div class="tier-top" style="margin-top:0">
               <span class="tier-name">Locals Only</span>
               <div class="tier-price-wrap">
@@ -481,7 +481,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
             </div>
             <div class="tier-desc"><strong style="font-size:16px;color:#0D2B45">10 spots</strong> <span style="font-size:13px;font-weight:400">· Can't stop the froth</span></div>
           </div>
-          <div class="tier active" id="tier-nomad" onclick="selectTier('nomad',this)" style="border:2px solid #007AFF;background:#EBF5FF">
+          <div class="tier" id="tier-nomad" onclick="selectTier('nomad',this)">
             <div class="tier-top">
               <span class="tier-name">Full Send Nomad</span>
               <div class="tier-price-wrap">
@@ -520,6 +520,15 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
         </div>
 
         <div class="err" id="err"></div>
+        <div id="email-opt-wrap" style="margin-bottom:12px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--muted);line-height:1.4">
+            <input type="checkbox" id="email-opt-in" style="margin-top:2px;accent-color:#007AFF;flex-shrink:0">
+            <span>Send me occasional surf updates &amp; new spot announcements</span>
+          </label>
+          <div id="email-opt-field" style="display:none;margin-top:10px">
+            <input type="email" id="opt-email" placeholder="you@email.com" autocomplete="email" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:15px;color:var(--text);font-family:inherit;outline:none;background:var(--white)">
+          </div>
+        </div>
         <button class="submit" id="sbtn" onclick="doSubmit()">Text Me When It's Firing 🤙</button>
         <p class="secure">🔒 Secure · Cancel any time</p>
       </div>
@@ -800,7 +809,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
 
 <script>
 // ── State ────────────────────────────────────────
-let currentTier   = 'locals';
+let currentTier   = 'coast';
 let currentType   = 'sms';
 let selectedSpots = new Set();
 let allRegions    = {};
@@ -861,12 +870,19 @@ function selType(type, btn) {
     inp.type='email'; inp.placeholder='you@gmail.com';
     lbl.textContent='Email address';
     hint.textContent='Alerts delivered any time of day.';
+    document.getElementById('email-opt-wrap').style.display='none';
   } else {
     inp.type='tel'; inp.placeholder='+1 (xxx) xxx-xxxx';
     lbl.textContent='Phone number';
     hint.textContent="Texts sent 6am–8pm at your spot's local time.";
+    document.getElementById('email-opt-wrap').style.display='block';
   }
 }
+
+// ── Email opt-in toggle ───────────────────────────
+document.getElementById('email-opt-in').addEventListener('change', function() {
+  document.getElementById('email-opt-field').style.display = this.checked ? 'block' : 'none';
+});
 
 // ── Spot picker ───────────────────────────────────
 async function loadSpots() {
@@ -885,7 +901,44 @@ function renderSpots(regions, filter = '') {
   const limit = TIER_LIMITS[currentTier];
   let html = '';
 
-  for (const [region, spots] of Object.entries(regions)) {
+  const REGION_ORDER = [
+    'Northern California',
+    'Southern California',
+    'Oahu North Shore',
+    'Oahu South Shore',
+    'Oahu East',
+    'Oahu West',
+    'Maui',
+    'Big Island',
+    'Kauai',
+    'NE Florida',
+    'Space Coast, FL',
+    'Treasure Coast, FL',
+    'Palm Beach, FL',
+    'Broward, FL',
+    'Miami, FL',
+    'Maine',
+    'New Hampshire',
+    'Massachusetts',
+    'Rhode Island',
+    'New York',
+    'New Jersey',
+    'Delaware',
+    'Maryland',
+    'Virginia',
+    'Outer Banks, NC',
+    'North Carolina',
+    'South Carolina',
+    'Georgia',
+  ];
+
+  const orderedKeys = [
+    ...REGION_ORDER.filter(r => regions[r]),
+    ...Object.keys(regions).filter(r => !REGION_ORDER.includes(r))
+  ];
+
+  for (const region of orderedKeys) {
+    const spots = regions[region];
     const m = fl ? spots.filter(s =>
       s.name.toLowerCase().includes(fl) ||
       region.toLowerCase().includes(fl) ||
@@ -952,9 +1005,13 @@ async function doSubmit() {
   btn.disabled=true; btn.textContent='Signing you up…';
 
   try {
+    const optIn = document.getElementById('email-opt-in');
+    const optEmailEl = document.getElementById('opt-email');
+    const optEmail = (optIn && optIn.checked && optEmailEl) ? optEmailEl.value.trim() : null;
+
     const res  = await fetch('/subscribe', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name, contact, type:currentType, tier:currentTier, spots:[...selectedSpots] }),
+      body: JSON.stringify({ name, contact, type:currentType, tier:currentTier, spots:[...selectedSpots], optEmail }),
     });
     const data = await res.json();
     if (!res.ok) {

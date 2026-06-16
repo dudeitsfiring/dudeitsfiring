@@ -44,7 +44,7 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '..', 'publi
 
 // ── Subscribe → create Stripe checkout session ────────────────
 app.post('/subscribe', async (req, res) => {
-  const { name, contact, type, tier, spots: spotIds } = req.body;
+  const { name, contact, type, tier, spots: spotIds, optEmail } = req.body;
 
   // Normalize phone number — ensure + prefix
   const normalizedContact = (type === 'sms' && contact && !contact.startsWith('+'))
@@ -70,7 +70,7 @@ app.post('/subscribe', async (req, res) => {
   try {
     // Create Stripe checkout session — user pays after trial
     const session = await createCheckoutSession({
-      name, contact: normalizedContact, type, tier: tier||'locals', spots: spotIds, baseUrl: BASE_URL
+      name, contact: normalizedContact, type, tier: tier||'locals', spots: spotIds, optEmail: optEmail||null, baseUrl: BASE_URL
     });
     res.json({ success: true, checkoutUrl: session.url });
   } catch(err) {
@@ -207,12 +207,49 @@ app.get('/unsubscribe/:token', (req, res) => {
 
 // ── Spots API ─────────────────────────────────────────────────
 app.get('/api/spots', (req, res) => {
+  const REGION_ORDER = [
+    'Northern California',
+    'Southern California',
+    'Oahu North Shore',
+    'Oahu South Shore',
+    'Oahu East',
+    'Oahu West',
+    'Maui',
+    'Big Island',
+    'Kauai',
+    'NE Florida',
+    'Space Coast, FL',
+    'Treasure Coast, FL',
+    'Palm Beach, FL',
+    'Broward, FL',
+    'Miami, FL',
+    'Maine',
+    'New Hampshire',
+    'Massachusetts',
+    'Rhode Island',
+    'New York',
+    'New Jersey',
+    'Delaware',
+    'Maryland',
+    'Virginia',
+    'Outer Banks, NC',
+    'North Carolina',
+    'South Carolina',
+    'Georgia',
+  ];
+
   const grouped = {};
   allSpots.forEach(s => {
     if (!grouped[s.region]) grouped[s.region] = [];
     grouped[s.region].push({ id:s.id, name:s.name, location:s.location });
   });
-  res.json({ total: allSpots.length, regions: grouped });
+
+  // Sort regions by defined order, append any unknown regions at the end
+  const ordered = {};
+  REGION_ORDER.forEach(r => { if (grouped[r]) ordered[r] = grouped[r]; });
+  Object.keys(grouped).forEach(r => { if (!ordered[r]) ordered[r] = grouped[r]; });
+
+  res.json({ total: allSpots.length, regions: ordered });
 });
 
 app.get('/api/tiers', (req, res) => res.json(db.TIERS));
