@@ -208,13 +208,15 @@ app.get('/unsubscribe/:token', (req, res) => {
 // ── Spots API ─────────────────────────────────────────────────
 app.get('/api/spots', (req, res) => {
   const REGION_ORDER = [
-    'Northern California',
-    'Southern California',
+    'NorCal',
+    'SoCal',
     'Oahu North Shore',
     'Oahu South Shore',
     'Oahu East',
     'Oahu West',
     'Maui',
+    'Molokai',
+    'Lanai',
     'Big Island',
     'Kauai',
     'NE Florida',
