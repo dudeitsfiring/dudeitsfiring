@@ -21,6 +21,7 @@ async function createCheckoutSession({ name, contact, type, tier, spots, baseUrl
         currency: 'usd',
         product_data: {
           name: `Dude, It's Firing! — ${config.name}`,
+          description: `${config.description} · By completing this purchase you agree to our Terms of Service and Privacy Policy at dudeitsfiring.com/terms`,
           description: config.description,
           images: [`${baseUrl}/logo.png`],
         },

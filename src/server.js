@@ -37,6 +37,11 @@ app.get('/api/admin/stripe-test', requireAdmin, async (req, res) => {
   }
 });
 
+
+// ── Legal pages ───────────────────────────────────────────────
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'terms.html')));
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'privacy.html')));
+
 // ── Subscribe → create Stripe checkout session ────────────────
 app.post('/subscribe', async (req, res) => {
   const { name, contact, type, tier, spots: spotIds } = req.body;
