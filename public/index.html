@@ -425,7 +425,6 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
       <div class="msg-bubble" style="text-align:left;max-width:100%">
         <p style="font-size:18px;font-weight:700;margin-bottom:8px;text-align:center">🤙 &nbsp;Dude, It's Firing!!&nbsp; 🔥</p>
         <p style="font-size:13px">Trestles (Lowers) is PUMPING!<br>5ft · 13s · SW swell 🌊<br>Glassy offshore · Tide dropping perfectly<br><br>GO NOW — conditions are dialed! 🏄</p>
-        <p style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:8px;border-top:1px solid rgba(255,255,255,0.2);padding-top:6px">🤙 Never spam · Only text when it's worth it</p>
       </div>
     </div>
 
@@ -496,10 +495,10 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
         <div class="f">
           <label id="clabel">Phone number</label>
           <input type="tel" id="contact" placeholder="+1 (xxx) xxx-xxxx" autocomplete="tel">
-          <p class="fhint" id="chint">Texts sent 6am–8pm at your spot's local time. One purpose: surf alerts.</p>
+          <p class="fhint" id="chint">Texts sent 6am–8pm at your spot's local time.</p>
         </div>
         <div class="f">
-          <label>YOUR SPOTS <span id="scount" class="sc" style="font-weight:600;color:#007AFF"></span></label>
+          <label>CHOOSE YOUR SURF SPOTS <span id="scount" class="sc" style="font-weight:600;color:#007AFF"></span></label>
           <div class="spot-search-wrap">
             <span class="search-ico">🔍</span>
             <input type="text" id="ssearch" placeholder="Search spots…" oninput="filterSpots(this.value)" style="padding-left:36px">
@@ -853,7 +852,7 @@ function selType(type, btn) {
   } else {
     inp.type='tel'; inp.placeholder='+1 (xxx) xxx-xxxx';
     lbl.textContent='Phone number';
-    hint.textContent="Texts sent 6am–8pm at your spot's local time. One purpose: surf alerts.";
+    hint.textContent="Texts sent 6am–8pm at your spot's local time.";
   }
 }
 
@@ -989,7 +988,7 @@ loadSpots();
     <div class="step-body">
       <div class="step-label">Step 1 of 3</div>
       <div class="step-hed">How many spots do you surf?</div>
-      <div class="step-sub">Pick the plan that fits. You can always upgrade later.</div>
+      
 
       <div class="mob-tier" id="mob-locals" onclick="mobSelectTier('locals')">
         <div class="mob-tier-left">
@@ -1077,7 +1076,7 @@ loadSpots();
       <div>
         <label class="step-label" id="mobContactLabel">Phone number</label>
         <input class="mob-input" type="tel" id="mobContact" placeholder="+1 (xxx) xxx-xxxx" autocomplete="tel">
-        <div class="mob-hint">Texts sent 6am–8pm at your spot's local time. One purpose: surf alerts.</div>
+        <div class="mob-hint">Texts sent 6am–8pm at your spot's local time.</div>
       </div>
 
       <div id="mobErr" style="color:#D00;font-size:14px;margin-bottom:12px;display:none"></div>
