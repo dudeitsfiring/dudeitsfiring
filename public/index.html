@@ -411,6 +411,14 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
   footer{padding:20px 18px;flex-direction:column;align-items:flex-start;gap:10px}
   .f-copy{font-size:11px}
 }
+
+/* ── Hide mobile-only elements on desktop ── */
+.mobile-cta-bar{display:none !important}
+.mobile-steps{display:none !important}
+@media(max-width:600px){
+  .mobile-cta-bar{display:flex !important}
+  .mobile-steps.open{display:flex !important}
+}
 </style>
 </head>
 <body>
@@ -432,7 +440,7 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
   </div>
 
   <!-- SMS mockup — fixed position at horizon center -->
-  <div class="sms-float" style="position:absolute;left:50%;transform:translateX(-50%);top:196px;z-index:2;width:340px;text-align:center">
+  <div class="sms-float" style="position:absolute;left:0;right:0;margin:0 auto;top:196px;z-index:2;width:340px;text-align:center">
     <div class="msg-time" style="color:#444;margin-bottom:10px;font-size:12px">Today 6:47 AM</div>
     <div class="msg-bubble" style="text-align:left">
       <p style="font-size:19px;font-weight:700;margin-bottom:8px;text-align:center">🤙 &nbsp;Dude, It's Firing!!&nbsp; 🔥</p>
