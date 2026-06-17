@@ -118,7 +118,7 @@ function checkSwellDirection(spot, swellDeg) {
 // ≤5kts = glassy, always ok | diff≤60° = offshore | 61-120° = cross | >120° = onshore
 // Global hard cap: 13kts (15mph)
 
-const MAX_WIND_KTS = 16; // ~18mph — heavy wind that kills most breaks
+const MAX_WIND_KTS = 14; // ~16mph — wind that kills most breaks
 
 function checkWind(spot, windDeg, windKts) {
   if (windDeg===null || windKts===null) return { pass:true, type:'unknown', note:'wind data unavailable' };
