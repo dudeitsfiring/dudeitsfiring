@@ -155,6 +155,22 @@ function checkTide(spot, tide) {
   return { pass:true, note:`tide ${tideFt.toFixed(1)}ft ${tideMovement}, 5hr window ${tideWindowMin.toFixed(1)}–${tideWindowMax.toFixed(1)}ft` };
 }
 
+// ── Period-adjusted effective height ──────────────────────────
+// Long-period groundswell breaks bigger than its open-ocean buoy
+// reading once it wraps into the coast — period has an outsized
+// effect on actual face height, especially at points/rivermouths
+// that organize swell well. Calibrated against real session
+// reports (e.g. Andrew Molera: 3.5ft @ 18-19s buoy reading
+// produced ~6ft faces in the water — a ~1.7x multiplier).
+function periodMultiplier(period) {
+  if (period === null) return 1.0;
+  if (period >= 18) return 1.7;
+  if (period >= 16) return 1.5;
+  if (period >= 14) return 1.3;
+  if (period >= 13) return 1.15;
+  return 1.0;
+}
+
 // ── Master scorer ─────────────────────────────────────────────
 // Score 0–100. Alert fires at score ≥ 72 AND no hard failures.
 // 72 = roughly 7/10 quality — genuinely firing, not just surfable.
@@ -175,13 +191,18 @@ function scoreConditions(spot, buoy, wind, tideData) {
   let score = 0;
   const td = tideData || { tideFt:null, tideMovement:null };
 
-  // Wave height
-  const hr = buoy.waveHeightFt / spot.minHeight;
+  // Wave height — adjusted for period, since long-period swell
+  // breaks bigger than its raw buoy reading once it wraps to shore
+  const mult = periodMultiplier(buoy.dominantPeriod);
+  const effectiveHeight = parseFloat((buoy.waveHeightFt * mult).toFixed(1));
+  const hr = effectiveHeight / spot.minHeight;
   if (hr < 1.0) {
-    issues.push(`waves too small: ${buoy.waveHeightFt}ft (need ${spot.minHeight}ft+)`);
+    issues.push(`waves too small: ${buoy.waveHeightFt}ft buoy (${effectiveHeight}ft effective @ ${mult}x, need ${spot.minHeight}ft+)`);
   } else {
     score += Math.min(35, Math.round(20 + (hr-1)*30));
-    reasons.push(`${buoy.waveHeightFt}ft waves`);
+    reasons.push(mult > 1.0
+      ? `${buoy.waveHeightFt}ft buoy → ${effectiveHeight}ft effective (long-period boost)`
+      : `${buoy.waveHeightFt}ft waves`);
   }
 
   // Period

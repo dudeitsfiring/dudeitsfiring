@@ -9,6 +9,42 @@ const { notify } = require('./notifier');
 const { createCheckoutSession, handleWebhook, endTrialNow } = require('./stripe');
 const allSpots = require('./spots');
 
+// ── Klaviyo integration ────────────────────────────────────────
+// Adds subscribers who opted into email updates to a Klaviyo list.
+// Safe no-op if KLAVIYO_API_KEY or KLAVIYO_LIST_ID isn't set yet.
+async function addToKlaviyo({ name, email }) {
+  const apiKey = process.env.KLAVIYO_API_KEY;
+  const listId = process.env.KLAVIYO_LIST_ID;
+  if (!apiKey || !listId || !email) return;
+
+  try {
+    const axios = require('axios');
+    await axios.post(
+      `https://a.klaviyo.com/api/lists/${listId}/relationships/profiles/`,
+      {
+        data: [{
+          type: 'profile',
+          attributes: {
+            email,
+            first_name: name,
+          },
+        }],
+      },
+      {
+        headers: {
+          Authorization: `Klaviyo-API-Key ${apiKey}`,
+          'Content-Type': 'application/json',
+          revision: '2024-10-15',
+        },
+      }
+    );
+    console.log(`📧 Added ${email} to Klaviyo list`);
+  } catch (err) {
+    // Don't let a Klaviyo failure break the signup flow
+    console.error('Klaviyo add failed:', err.response?.data || err.message);
+  }
+}
+
 const app  = express();
 const PORT = process.env.PORT || 3000;
 const CRON = process.env.CRON_SCHEDULE || '0 */3 * * *';
@@ -98,7 +134,7 @@ app.post('/webhook', async (req, res) => {
     case 'checkout.session.completed': {
       // Payment setup complete — add subscriber to database
       const session = event.data.object;
-      const { name, contact, type, tier, spots } = session.metadata;
+      const { name, contact, type, tier, spots, optEmail } = session.metadata;
       try {
         const token = db.addSubscriber({
           name,
@@ -121,6 +157,13 @@ app.post('/webhook', async (req, res) => {
           spotNames,
           token,
         });
+
+        // Add to Klaviyo email list — either their primary email (if type=email)
+        // or their optional opted-in email (if type=sms and they checked the box)
+        const emailForKlaviyo = type === 'email' ? contact : (optEmail || null);
+        if (emailForKlaviyo) {
+          await addToKlaviyo({ name, email: emailForKlaviyo });
+        }
 
         console.log(`✅ New subscriber: ${name} (${tier}) — ${spotNames}`);
       } catch(err) {

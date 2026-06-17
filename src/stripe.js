@@ -10,7 +10,7 @@ const PRICE_CONFIG = {
 };
 
 // ── Create Stripe checkout session ────────────────────────────
-async function createCheckoutSession({ name, contact, type, tier, spots, baseUrl }) {
+async function createCheckoutSession({ name, contact, type, tier, spots, optEmail, baseUrl }) {
   const config = PRICE_CONFIG[tier] || PRICE_CONFIG.locals;
 
   const session = await stripe.checkout.sessions.create({
@@ -22,7 +22,6 @@ async function createCheckoutSession({ name, contact, type, tier, spots, baseUrl
         product_data: {
           name: `Dude, It's Firing! — ${config.name}`,
           description: `${config.description} · By completing this purchase you agree to our Terms of Service and Privacy Policy at dudeitsfiring.com/terms`,
-          description: config.description,
           images: [`${baseUrl}/logo.png`],
         },
         unit_amount: config.amount,
@@ -38,6 +37,7 @@ async function createCheckoutSession({ name, contact, type, tier, spots, baseUrl
         type,
         tier,
         spots: JSON.stringify(spots),
+        optEmail: optEmail || '',
       },
     },
     customer_email: type === 'email' ? contact : undefined,
@@ -47,6 +47,7 @@ async function createCheckoutSession({ name, contact, type, tier, spots, baseUrl
       type,
       tier,
       spots: JSON.stringify(spots),
+      optEmail: optEmail || '',
     },
     success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/?cancelled=true`,
