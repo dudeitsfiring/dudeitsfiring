@@ -120,18 +120,30 @@ async function sendSMS(subscriber, spot, conditions, baseUrl) {
   console.log(`  📱 SMS sent to ${subscriber.contact}`);
 }
 
+// ── Format spot names for welcome message ─────────────────────
+// Lists up to 5 spots by name; summarizes the rest to keep SMS
+// short and avoid multi-segment overage on big plans (Nomad).
+function formatSpotList(spotNames) {
+  const names = (spotNames || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (names.length <= 5) return names.join(', ');
+  const shown = names.slice(0, 5).join(', ');
+  const remaining = names.length - 5;
+  return `${shown}, and ${remaining} more spot${remaining === 1 ? '' : 's'}`;
+}
+
 // ── Welcome message ───────────────────────────────────────────
 
 async function sendWelcome(subscriber, baseUrl, { spotNames, token }) {
   const unsubUrl = `${baseUrl}/unsubscribe/${token}`;
-  
+  const spotList = formatSpotList(spotNames);
+
   if (subscriber.type === 'sms') {
     const twilio = require('twilio')(
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN
     );
     await twilio.messages.create({
-      body: `Dude Its Firing - You're in! We watch your spots 24/7 and text when its worth it. P.S. if its the off season, give it a few weeks. We never cry wolf. Stop: ${unsubUrl}`,
+      body: `🤙 You're in! Welcome to Dude It's Firing! We're watching ${spotList} right now — the second any of them are firing, you'll get a text. Surf can be seasonal so give it time if it's quiet. When we text, go SURF.`,
       from: process.env.TWILIO_FROM_NUMBER,
       to:   subscriber.contact,
     });
