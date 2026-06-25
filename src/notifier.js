@@ -87,6 +87,25 @@ async function sendEmail(subscriber, spot, conditions, baseUrl) {
 
 // ── SMS ───────────────────────────────────────────────────────
 
+// ── SMS segment cost helper ───────────────────────────────────
+// Any non-GSM-7 character (emoji, em-dash, curly quotes, the ·
+// middot, etc.) forces the WHOLE message into UCS-2 encoding,
+// dropping the per-segment limit from 160/153 chars to 70/67.
+// Confirmed this session: the alert SMS's 🤙 + · pushed it from
+// 1 segment to 3 — at projected scale (Coast Rat ~150 alerts/yr
+// x thousands of subscribers x years), that's tens of thousands
+// of dollars in avoidable Twilio cost. The welcome message (sent
+// once per subscriber, not repeatedly) keeps its 🤙 — the cost
+// there is trivial and the warm first impression is worth it.
+// Email is unaffected either way since it has no segment cost.
+function smsSegmentCount(text) {
+  const hasUnicode = /[^\x00-\x7F]/.test(text);
+  const singleLimit = hasUnicode ? 70 : 160;
+  const multiLimit = hasUnicode ? 67 : 153;
+  if (text.length <= singleLimit) return 1;
+  return Math.ceil(text.length / multiLimit);
+}
+
 async function sendSMS(subscriber, spot, conditions, baseUrl) {
   // Enforce daylight-only SMS — never wake someone up at 4am
   const tz = spot.timezone || 'America/Los_Angeles';
@@ -105,19 +124,28 @@ async function sendSMS(subscriber, spot, conditions, baseUrl) {
   const { buoy, wind, score } = conditions;
   const unsubUrl = `${baseUrl}/unsubscribe/${subscriber.token}`;
 
+  // GSM-7 safe — no emoji, no middot (·). This is the message that
+  // fires repeatedly (potentially 100-200+ times/year per Coast Rat
+  // subscriber), so keeping it 1 segment instead of 3 is the real,
+  // ongoing savings — unlike the welcome message, which only sends once.
   const body = [
-    `🤙 Dude, it's firing at ${spot.name}!`,
-    `${buoy.waveHeightFt}ft @ ${buoy.dominantPeriod||'?'}s · ${buoy.swellDirection||'?'} swell · Score:${score.score}/100`,
+    `Dude, it's firing at ${spot.name}!`,
+    `${buoy.waveHeightFt}ft @ ${buoy.dominantPeriod||'?'}s, ${buoy.swellDirection||'?'} swell, Score:${score.score}/100`,
     wind.windSpeedKts !== null ? `Wind: ${wind.windDirection} ${wind.windSpeedKts}kts` : null,
     `Unsub: ${unsubUrl}`,
   ].filter(Boolean).join('\n');
+
+  const segments = smsSegmentCount(body);
+  if (segments > 1) {
+    console.warn(`  ⚠️  SMS to ${subscriber.contact} is ${segments} segments (${body.length} chars) — check for non-GSM-7 characters if unexpected`);
+  }
 
   await twilio.messages.create({
     body,
     from: process.env.TWILIO_FROM_NUMBER,
     to:   subscriber.contact,
   });
-  console.log(`  📱 SMS sent to ${subscriber.contact}`);
+  console.log(`  📱 SMS sent to ${subscriber.contact} (${segments} segment${segments>1?'s':''})`);
 }
 
 // ── Format spot names for welcome message ─────────────────────
@@ -142,12 +170,22 @@ async function sendWelcome(subscriber, baseUrl, { spotNames, token }) {
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN
     );
+    // Sent as MMS with the wave image — this is the ONE message in
+    // the whole system that justifies the extra MMS cost (~$0.02 vs
+    // ~$0.0079 for SMS), because it only fires once per subscriber,
+    // not repeatedly like the alert message. At ~18,000 subscribers
+    // over 2 years, this is roughly $360 total — trivial, and a much
+    // stronger first impression than plain text. The image lives on
+    // the public site already (final-bg.jpg — chosen over wave-bg.jpg
+    // because its landscape aspect ratio previews better in MMS
+    // thumbnails than the portrait-oriented alternative).
     await twilio.messages.create({
       body: `🤙 You're in! Welcome to Dude It's Firing! We're watching ${spotList} right now — the second any of them are firing, you'll get a text. Surf can be seasonal so give it time if it's quiet. When we text, go SURF.`,
+      mediaUrl: [`${baseUrl}/final-bg.jpg`],
       from: process.env.TWILIO_FROM_NUMBER,
       to:   subscriber.contact,
     });
-    console.log(`  📱 Welcome SMS sent to ${subscriber.contact}`);
+    console.log(`  📱 Welcome MMS sent to ${subscriber.contact}`);
   } else if (subscriber.type === 'email') {
     await getTransporter().sendMail({
       from:    process.env.EMAIL_FROM || 'Dude Its Firing <noreply@dudeitsfiring.com>',
