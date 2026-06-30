@@ -32,7 +32,7 @@ async function withRetry(fn, retries = 3, delayMs = 800) {
 
 async function fetchNoaaBuoy(buoyId) {
   const url = `https://www.ndbc.noaa.gov/data/realtime2/${buoyId}.txt`;
-  const res = await axios.get(url, { timeout: 10000 });
+  const res = await axios.get(url, { timeout: 4000 });
   const lines = res.data.trim().split('\n');
   const headers = lines[0].replace('#','').trim().split(/\s+/);
   const values  = lines[2].trim().split(/\s+/);
@@ -80,7 +80,7 @@ async function fetchTideData(stationId, lon) {
     + `?begin_date=${encodeURIComponent(fmt(begin))}&end_date=${encodeURIComponent(fmt(end))}`
     + `&station=${stationId}&product=predictions&datum=MLLW&time_zone=lst_ldt`
     + `&interval=6&units=english&application=dudeitsfiring&format=json`;
-  const res = await axios.get(url, { timeout: 10000 });
+  const res = await axios.get(url, { timeout: 4000 });
   const preds = res.data.predictions;
   if (!preds || preds.length < 3) return { tideFt:null, tideMovement:null, tideWindowMin:null, tideWindowMax:null };
   const vals = preds.map(p => parseFloat(p.v));
@@ -105,7 +105,7 @@ async function fetchWindData(lat, lon) {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
       + `&hourly=windspeed_10m,winddirection_10m&wind_speed_unit=kn&forecast_days=1&timezone=auto`;
-    const res = await axios.get(url, { timeout: 10000 });
+    const res = await axios.get(url, { timeout: 4000 });
     const d = res.data.hourly;
     const i = findCurrentHourIndex(d.time || d.windspeed_10m.map((_,j) => j));
     const spd = d.windspeed_10m[i];
@@ -123,7 +123,7 @@ async function fetchWindData(lat, lon) {
       try {
         const res = await axios.get(
           `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=metric`,
-          { timeout: 10000 }
+          { timeout: 4000 }
         );
         const w = res.data.wind;
         return {
@@ -174,7 +174,7 @@ async function fetchOpenMeteoMarine(lat, lon) {
   const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}`
     + `&hourly=swell_wave_height,swell_wave_period,swell_wave_direction,wave_height,wave_period,wave_direction`
     + `&forecast_days=1&timezone=auto`;
-  const res = await withRetry(() => axios.get(url, { timeout: 10000 }));
+  const res = await withRetry(() => axios.get(url, { timeout: 4000 }));
   const d = res.data.hourly;
   const i = findCurrentHourIndex(d.time);
   const h   = d.swell_wave_height[i]    ?? d.wave_height[i];
@@ -420,28 +420,49 @@ async function fetchSpotConditions(spot) {
     return { spot, buoy, wind, tideData, score:result };
   }
 
-  // Hybrid: fetch NOAA buoy and Open-Meteo simultaneously
-  const [buoyResult, modelResult] = await Promise.allSettled([
-    fetchNoaaBuoyWithFallback(spot),
-    fetchOpenMeteoMarine(spot.lat, spot.lon),
-  ]);
+  // Hybrid: fetch NOAA buoy and Open-Meteo simultaneously.
+  // Key design: don't wait for NOAA if Open-Meteo already answered.
+  // Uses a race with a short NOAA-specific deadline — if NOAA hasn't
+  // responded by the time Open-Meteo finishes, use Open-Meteo and
+  // let NOAA resolve in the background (we don't need it anymore).
+  // This means a NOAA outage never blocks the service — Open-Meteo
+  // always provides a result within its own response time (~1-2s).
 
-  const buoyOk  = buoyResult.status  === 'fulfilled';
-  const modelOk = modelResult.status === 'fulfilled';
+  const modelPromise = fetchOpenMeteoMarine(spot.lat, spot.lon);
+  const buoyPromise  = fetchNoaaBuoyWithFallback(spot);
 
-  let buoy;
-  if (buoyOk && modelOk) {
-    // Both succeeded — apply selection logic
-    buoy = selectBestData(buoyResult.value, modelResult.value);
-  } else if (buoyOk) {
-    buoy = { ...buoyResult.value, _source: 'buoy' };
-  } else if (modelOk) {
-    buoy = { ...modelResult.value, _source: 'model' };
-  } else {
-    // Both failed — re-throw the buoy error so checker logs it
-    throw buoyResult.reason;
+  // Wait for Open-Meteo first — it's our reliable backbone
+  let modelData, buoyData;
+  try {
+    modelData = await modelPromise;
+  } catch (modelErr) {
+    // Open-Meteo failed — fall back to NOAA only
+    try {
+      buoyData = await buoyPromise;
+      const buoy = { ...buoyData, _source: 'buoy' };
+      const result = scoreConditions(spot, buoy, wind, tideData);
+      return { spot, buoy, wind, tideData, score:result };
+    } catch (buoyErr) {
+      throw buoyErr; // both failed
+    }
   }
 
+  // Open-Meteo succeeded — now check if NOAA also has a result
+  // without waiting (race it against an immediate resolve)
+  try {
+    buoyData = await Promise.race([
+      buoyPromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('buoy slower than model')), 500)),
+    ]);
+  } catch (_) {
+    // NOAA didn't respond within 500ms of Open-Meteo — use model only
+    const buoy = { ...modelData, _source: 'model' };
+    const result = scoreConditions(spot, buoy, wind, tideData);
+    return { spot, buoy, wind, tideData, score:result };
+  }
+
+  // Both succeeded — apply selection logic
+  const buoy = selectBestData(buoyData, modelData);
   const result = scoreConditions(spot, buoy, wind, tideData);
   return { spot, buoy, wind, tideData, score:result };
 }
