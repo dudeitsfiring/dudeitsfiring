@@ -10,6 +10,24 @@ function msToKnots(ms)  { return Math.round(ms * 1.944); }
 function mToFt(m)       { return parseFloat((m * 3.281).toFixed(1)); }
 function angleDiff(a,b) { return Math.abs(((a - b + 540) % 360) - 180); }
 
+// Retry wrapper for Open-Meteo — handles 403 rate-limit responses
+// with exponential backoff. Open-Meteo is free but rate-limited;
+// a short pause between retries is enough to recover.
+async function withRetry(fn, retries = 3, delayMs = 800) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const isRateLimit = err.response && (err.response.status === 403 || err.response.status === 429);
+      if (isRateLimit && attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 // ── NOAA Buoy ─────────────────────────────────────────────────
 
 async function fetchNoaaBuoy(buoyId) {
@@ -35,25 +53,47 @@ async function fetchNoaaBuoy(buoyId) {
 }
 
 // ── NOAA Tides API ────────────────────────────────────────────
+// Uses 6-minute interval predictions (NOAA's highest resolution)
+// over a 3-hour window centered on now, so we get the actual
+// current tide height rather than the nearest hourly snap.
+//
+// Time handling: NOAA's lst_ldt parameter expects local station
+// time, so we offset UTC by the station's approximate timezone
+// using the spot's longitude — accurate enough for tide purposes.
 
-async function fetchTideData(stationId) {
+function utcToStationLocal(date, lon) {
+  // Estimate UTC offset from longitude (15° per hour)
+  const offsetHours = Math.round(lon / 15);
+  return new Date(date.getTime() + offsetHours * 3600000);
+}
+
+async function fetchTideData(stationId, lon) {
   if (!stationId) return { tideFt:null, tideMovement:null, tideWindowMin:null, tideWindowMax:null };
-  const now   = new Date();
-  const fmt   = d => d.toISOString().slice(0,16).replace('T',' ');
-  const end   = new Date(now.getTime() + 6*3600*1000);
+  const now      = new Date();
+  const localNow = lon !== undefined ? utcToStationLocal(now, lon) : now;
+  // 30-min back, 2.5-hrs forward — captures current reading plus
+  // enough future values to determine movement direction reliably
+  const begin    = new Date(localNow.getTime() - 30*60000);
+  const end      = new Date(localNow.getTime() + 150*60000);
+  const fmt      = d => d.toISOString().slice(0,16).replace('T',' ');
   const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter`
-    + `?begin_date=${encodeURIComponent(fmt(now))}&end_date=${encodeURIComponent(fmt(end))}`
+    + `?begin_date=${encodeURIComponent(fmt(begin))}&end_date=${encodeURIComponent(fmt(end))}`
     + `&station=${stationId}&product=predictions&datum=MLLW&time_zone=lst_ldt`
-    + `&interval=h&units=english&application=dudeitsfiring&format=json`;
+    + `&interval=6&units=english&application=dudeitsfiring&format=json`;
   const res = await axios.get(url, { timeout: 10000 });
   const preds = res.data.predictions;
-  if (!preds || preds.length < 2) return { tideFt:null, tideMovement:null, tideWindowMin:null, tideWindowMax:null };
-  const vals = preds.slice(0,6).map(p => parseFloat(p.v));
+  if (!preds || preds.length < 3) return { tideFt:null, tideMovement:null, tideWindowMin:null, tideWindowMax:null };
+  const vals = preds.map(p => parseFloat(p.v));
+  // Find the reading closest to right now (middle of our window)
+  const midIdx = Math.floor(vals.length / 2);
+  const current = vals[midIdx];
+  // Movement: compare current to reading 30 minutes from now
+  const futureIdx = Math.min(midIdx + 5, vals.length - 1); // 5 × 6min = 30min ahead
   return {
-    tideFt:        vals[0],
-    tideMovement:  vals[1] > vals[0] ? 'rising' : 'falling',
-    tideWindowMin: Math.min(...vals),
-    tideWindowMax: Math.max(...vals),
+    tideFt:        parseFloat(current.toFixed(1)),
+    tideMovement:  vals[futureIdx] > current ? 'rising' : 'falling',
+    tideWindowMin: parseFloat(Math.min(...vals).toFixed(1)),
+    tideWindowMax: parseFloat(Math.max(...vals).toFixed(1)),
   };
 }
 
@@ -67,7 +107,7 @@ async function fetchWindData(lat, lon) {
       + `&hourly=windspeed_10m,winddirection_10m&wind_speed_unit=kn&forecast_days=1&timezone=auto`;
     const res = await axios.get(url, { timeout: 10000 });
     const d = res.data.hourly;
-    const i = Math.min(new Date().getUTCHours(), d.windspeed_10m.length - 1);
+    const i = findCurrentHourIndex(d.time || d.windspeed_10m.map((_,j) => j));
     const spd = d.windspeed_10m[i];
     const dir = d.winddirection_10m[i];
     if (spd == null) throw new Error('No Open-Meteo wind data');
@@ -115,14 +155,28 @@ async function fetchNoaaBuoyWithFallback(spot) {
 }
 
 // ── Open-Meteo Marine (global) ────────────────────────────────
+// Uses local time from the API response to find the correct
+// current-hour index, rather than using raw UTC hours which
+// would be wrong for any timezone offset from UTC.
+
+function findCurrentHourIndex(times) {
+  const now = Date.now();
+  let closest = 0;
+  let closestDiff = Infinity;
+  times.forEach((t, i) => {
+    const diff = Math.abs(new Date(t).getTime() - now);
+    if (diff < closestDiff) { closestDiff = diff; closest = i; }
+  });
+  return closest;
+}
 
 async function fetchOpenMeteoMarine(lat, lon) {
   const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}`
     + `&hourly=swell_wave_height,swell_wave_period,swell_wave_direction,wave_height,wave_period,wave_direction`
     + `&forecast_days=1&timezone=auto`;
-  const res = await axios.get(url, { timeout: 10000 });
+  const res = await withRetry(() => axios.get(url, { timeout: 10000 }));
   const d = res.data.hourly;
-  const i = Math.min(new Date().getUTCHours(), d.wave_height.length - 1);
+  const i = findCurrentHourIndex(d.time);
   const h   = d.swell_wave_height[i]    ?? d.wave_height[i];
   const p   = d.swell_wave_period[i]    ?? d.wave_period[i];
   const dir = d.swell_wave_direction[i] ?? d.wave_direction[i];
@@ -208,6 +262,7 @@ function periodMultiplier(period) {
   if (period >= 16) return 1.5;
   if (period >= 14) return 1.3;
   if (period >= 13) return 1.15;
+  if (period >= 12) return 1.07;  // modest boost — 12s is real groundswell
   return 1.0;
 }
 
@@ -350,7 +405,7 @@ async function fetchSpotConditions(spot) {
   // Always fetch wind and tide in parallel — these never change
   const [wind, tideData] = await Promise.all([
     fetchWindData(spot.lat, spot.lon),
-    fetchTideData(spot.tideStation),
+    fetchTideData(spot.tideStation, spot.lon),
   ]);
 
   // For spots already set to openmeteo-only (e.g. remote Hawaii

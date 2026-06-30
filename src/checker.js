@@ -13,13 +13,33 @@ const COOLDOWN = parseInt(process.env.ALERT_COOLDOWN_HOURS || '6');
 function isDaylight(spot) {
   const lon = spot.lon;
   let utcOffset;
-  if (lon < -115)      utcOffset = -8;  // Pacific  (CA, HI uses -10 but close enough)
-  else if (lon < -100) utcOffset = -7;  // Mountain
-  else if (lon < -85)  utcOffset = -6;  // Central
-  else                 utcOffset = -5;  // Eastern  (EC, FL)
+
+  // Hawaii: lon roughly -154 to -160, always UTC-10 (no DST)
+  if (lon < -154)      utcOffset = -10;
+  // Pacific US: UTC-8 standard, UTC-7 daylight saving (Mar-Nov)
+  else if (lon < -115) utcOffset = isDST() ? -7 : -8;
+  // Mountain: UTC-7 standard, UTC-6 DST
+  else if (lon < -100) utcOffset = isDST() ? -6 : -7;
+  // Central: UTC-6 standard, UTC-5 DST
+  else if (lon < -85)  utcOffset = isDST() ? -5 : -6;
+  // Eastern: UTC-5 standard, UTC-4 DST
+  else                 utcOffset = isDST() ? -4 : -5;
 
   const localHour = (new Date().getUTCHours() + 24 + utcOffset) % 24;
   return localHour >= 6 && localHour < 20; // 6am to 8pm only
+}
+
+// DST in the US: second Sunday in March to first Sunday in November
+function isDST() {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  // Second Sunday in March
+  const march = new Date(Date.UTC(year, 2, 1));
+  const dstStart = new Date(Date.UTC(year, 2, 8 + (7 - march.getUTCDay()) % 7));
+  // First Sunday in November
+  const nov = new Date(Date.UTC(year, 10, 1));
+  const dstEnd = new Date(Date.UTC(year, 10, 1 + (7 - nov.getUTCDay()) % 7));
+  return now >= dstStart && now < dstEnd;
 }
 
 async function checkAllSpots() {
