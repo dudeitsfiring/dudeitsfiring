@@ -45,12 +45,19 @@ function isDST() {
 async function checkAllSpots() {
   console.log(`\n[${new Date().toISOString()}] Checking ${spots.length} spots...\n`);
 
+  // Small delay between spots prevents Open-Meteo rate limiting (403s).
+  // At 200ms per spot, 276 spots = ~55 seconds total — acceptable for
+  // a cron job running every 3 hours.
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
   for (const spot of spots) {
     try {
       // Skip if it's dark — no point waking people up
       if (!isDaylight(spot)) {
         continue;
       }
+
+      await sleep(200); // rate-limit buffer for Open-Meteo
 
       const conditions = await fetchSpotConditions(spot);
       const { score, buoy, wind, tideData } = conditions;
