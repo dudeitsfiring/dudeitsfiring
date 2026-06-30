@@ -520,16 +520,21 @@ footer{background:#071420;padding:26px 56px;display:flex;align-items:center;just
         </div>
 
         <div class="err" id="err"></div>
+        <div id="sms-consent-wrap" style="margin-bottom:12px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--muted);line-height:1.4">
+            <input type="checkbox" id="sms-consent" style="margin-top:2px;accent-color:#007AFF;flex-shrink:0">
+            <span>By checking this box, I consent to receive recurring surf alert text messages from Dude, It's Firing! at the mobile number provided. Message frequency varies based on conditions. Msg &amp; data rates may apply. Reply STOP to cancel at any time. See our <a href="/terms" style="color:#007AFF;text-decoration:underline">Terms</a> and <a href="/privacy" style="color:#007AFF;text-decoration:underline">Privacy Policy</a>.</span>
+          </label>
+        </div>
         <div id="email-opt-wrap" style="margin-bottom:12px">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--muted);line-height:1.4">
-            <input type="checkbox" id="email-opt-in" checked style="margin-top:2px;accent-color:#007AFF;flex-shrink:0">
+            <input type="checkbox" id="email-opt-in" style="margin-top:2px;accent-color:#007AFF;flex-shrink:0">
             <span>Send me occasional surf updates &amp; new spot announcements</span>
           </label>
           <div id="email-opt-field" style="display:block;margin-top:10px">
             <input type="email" id="opt-email" placeholder="you@email.com" autocomplete="email" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:15px;color:var(--text);font-family:inherit;outline:none;background:var(--white)">
           </div>
         </div>
-        <p class="fhint" style="margin-bottom:14px;line-height:1.5">By checking this box and submitting this form, you consent to receive recurring surf alert text messages from Dude, It's Firing! at the mobile number provided. Message frequency varies based on conditions. Msg &amp; data rates may apply. Reply STOP to cancel at any time. See our <a href="/terms" style="color:#007AFF;text-decoration:underline">Terms</a> and <a href="/privacy" style="color:#007AFF;text-decoration:underline">Privacy Policy</a>.</p>
         <button class="submit" id="sbtn" onclick="doSubmit()">Text Me When It's Firing 🤙</button>
         <p class="secure">🔒 Secure · Cancel any time</p>
       </div>
@@ -1003,6 +1008,7 @@ async function doSubmit() {
   if (!name)               return showErr('Please enter your name.');
   if (!contact)            return showErr(`Please enter your ${currentType==='sms'?'phone number':'email address'}.`);
   if (!selectedSpots.size) return showErr('Pick at least one surf spot.');
+  if (!document.getElementById('sms-consent').checked) return showErr('Please check the box to consent to receive text alerts.');
 
   const btn = document.getElementById('sbtn');
   btn.disabled=true; btn.textContent='Signing you up…';
