@@ -429,7 +429,12 @@ async function fetchSpotConditions(spot) {
   // always provides a result within its own response time (~1-2s).
 
   const modelPromise = fetchOpenMeteoMarine(spot.lat, spot.lon);
-  const buoyPromise  = fetchNoaaBuoyWithFallback(spot);
+  // Create buoy promise and immediately attach a silent .catch to prevent
+  // Node from treating it as an unhandled rejection if NOAA fails before
+  // we get to await it. The error is still available when we await below.
+  let buoyReject;
+  const buoyPromise = fetchNoaaBuoyWithFallback(spot);
+  buoyPromise.catch(() => {}); // suppress unhandled rejection warning
 
   // Wait for Open-Meteo first — it's our reliable backbone
   let modelData, buoyData;
