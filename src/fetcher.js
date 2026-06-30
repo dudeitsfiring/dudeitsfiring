@@ -286,9 +286,12 @@ function scoreConditions(spot, buoy, wind, tideData) {
   let score = 0;
   const td = tideData || { tideFt:null, tideMovement:null };
 
-  // Wave height — adjusted for period, since long-period swell
-  // breaks bigger than its raw buoy reading once it wraps to shore
-  const mult = periodMultiplier(buoy.dominantPeriod);
+  // Wave height — adjusted for period at reefs and points only.
+  // Beach breaks don't focus or amplify long-period swell the way
+  // a reef or point does — a 3ft @ 14s buoy reading at Bolsa Chica
+  // produces ~3ft of actual surf, not 3.9ft. beachBreak:true on a
+  // spot disables the multiplier and uses raw buoy height only.
+  const mult = spot.beachBreak ? 1.0 : periodMultiplier(buoy.dominantPeriod);
   const effectiveHeight = parseFloat((buoy.waveHeightFt * mult).toFixed(1));
   const hr = effectiveHeight / spot.minHeight;
   if (hr < 1.0) {
