@@ -57,23 +57,61 @@ async function fetchTideData(stationId) {
   };
 }
 
-// ── OpenWeatherMap Wind ───────────────────────────────────────
+// ── Wind Data ─────────────────────────────────────────────────
+// Primary: Open-Meteo (no API key, same provider as our marine data,
+// proven reliable). Falls back to OpenWeatherMap if key is configured.
 
 async function fetchWindData(lat, lon) {
-  const key = process.env.OPENWEATHER_API_KEY;
-  if (!key || key === 'your_openweather_key_here') {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      + `&hourly=windspeed_10m,winddirection_10m&wind_speed_unit=kn&forecast_days=1&timezone=auto`;
+    const res = await axios.get(url, { timeout: 10000 });
+    const d = res.data.hourly;
+    const i = Math.min(new Date().getUTCHours(), d.windspeed_10m.length - 1);
+    const spd = d.windspeed_10m[i];
+    const dir = d.winddirection_10m[i];
+    if (spd == null) throw new Error('No Open-Meteo wind data');
+    return {
+      windSpeedKts:     Math.round(spd),
+      windDirection:    degreesToCompass(dir),
+      windDirectionDeg: Math.round(dir),
+    };
+  } catch (err) {
+    // Optional fallback to OpenWeatherMap if key is set
+    const key = process.env.OPENWEATHER_API_KEY;
+    if (key && key !== 'your_openweather_key_here') {
+      try {
+        const res = await axios.get(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=metric`,
+          { timeout: 10000 }
+        );
+        const w = res.data.wind;
+        return {
+          windSpeedKts:     msToKnots(w.speed),
+          windDirection:    degreesToCompass(w.deg),
+          windDirectionDeg: Math.round(w.deg),
+        };
+      } catch (_) {}
+    }
     return { windSpeedKts:null, windDirection:null, windDirectionDeg:null };
   }
-  const res = await axios.get(
-    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=metric`,
-    { timeout: 10000 }
-  );
-  const w = res.data.wind;
-  return {
-    windSpeedKts:     msToKnots(w.speed),
-    windDirection:    degreesToCompass(w.deg),
-    windDirectionDeg: Math.round(w.deg),
-  };
+}
+
+// ── NOAA Buoy with fallback ───────────────────────────────────
+// Tries primary buoyId first; if it's offline/returning no data,
+// falls back to spot.fallbackBuoyId if one is defined.
+
+async function fetchNoaaBuoyWithFallback(spot) {
+  try {
+    return await fetchNoaaBuoy(spot.buoyId);
+  } catch (err) {
+    if (spot.fallbackBuoyId) {
+      const data = await fetchNoaaBuoy(spot.fallbackBuoyId);
+      data._usedFallback = spot.fallbackBuoyId;
+      return data;
+    }
+    throw err;
+  }
 }
 
 // ── Open-Meteo Marine (global) ────────────────────────────────
@@ -149,10 +187,12 @@ function checkTide(spot, tide) {
     return { pass:false, note:`tide ${tideFt.toFixed(1)}ft outside ideal range ${spot.tideMin}–${spot.tideMax}ft` };
   if (spot.tideMovement && spot.tideMovement!=='any' && tideMovement!==spot.tideMovement)
     return { pass:false, note:`tide ${tideMovement} — ${spot.name||'spot'} needs ${spot.tideMovement}` };
-  const buf = 0.5;
-  if (tideWindowMin < spot.tideMin-buf || tideWindowMax > spot.tideMax+buf)
-    return { pass:false, note:`tide window (${tideWindowMin.toFixed(1)}–${tideWindowMax.toFixed(1)}ft) won't hold 5hrs` };
-  return { pass:true, note:`tide ${tideFt.toFixed(1)}ft ${tideMovement}, 5hr window ${tideWindowMin.toFixed(1)}–${tideWindowMax.toFixed(1)}ft` };
+  // 5-hour window: informational only — current tide in range is enough to fire.
+  // A spot that's good right now is worth alerting even if tide drifts later.
+  const windowNote = (tideWindowMin !== null && tideWindowMax !== null)
+    ? ` (5hr window: ${tideWindowMin.toFixed(1)}–${tideWindowMax.toFixed(1)}ft)`
+    : '';
+  return { pass:true, note:`tide ${tideFt.toFixed(1)}ft ${tideMovement}${windowNote}` };
 }
 
 // ── Period-adjusted effective height ──────────────────────────
@@ -246,17 +286,107 @@ function scoreConditions(spot, buoy, wind, tideData) {
   return { isGood, quality, score, reasons, issues };
 }
 
+// ── Hybrid data selection ─────────────────────────────────────
+// Runs NOAA buoy and Open-Meteo simultaneously, then picks the
+// best reading based on agreement and data quality.
+//
+// Decision rules (in order):
+//   1. Both return data + agree within tolerance → use NOAA buoy
+//      (real ocean measurement beats model when they agree)
+//   2. Both return data + diverge significantly → use Open-Meteo
+//      (model is more reliable than a buoy with noisy/stale data)
+//   3. Only one returns data → use whichever succeeded
+//   4. Neither → throw, checker logs the error and moves on
+//
+// "Agree" = within 1.5ft height AND 2s period (or period is null
+//   on the buoy — the "nulls" issue we saw where a buoy loses its
+//   directional sensor but still reports height).
+
+const HYBRID_HEIGHT_TOLERANCE = 1.5; // ft
+const HYBRID_PERIOD_TOLERANCE = 2;   // seconds
+
+function selectBestData(buoyData, modelData) {
+  // If buoy has null period (sensor issue), trust model's period
+  // but keep buoy's height if it's within tolerance
+  const buoyPeriodOk = buoyData.dominantPeriod !== null;
+
+  const heightDiff = Math.abs(buoyData.waveHeightFt - modelData.waveHeightFt);
+  const periodDiff = buoyPeriodOk
+    ? Math.abs(buoyData.dominantPeriod - (modelData.dominantPeriod || 0))
+    : 999;
+
+  const agree = heightDiff <= HYBRID_HEIGHT_TOLERANCE && periodDiff <= HYBRID_PERIOD_TOLERANCE;
+
+  if (agree && buoyPeriodOk) {
+    // High confidence — real measurement matches model, use buoy
+    return { ...buoyData, _source: 'buoy', _modelHeight: modelData.waveHeightFt };
+  }
+
+  if (agree && !buoyPeriodOk) {
+    // Buoy height looks right but period sensor failed — blend:
+    // use buoy height, model period and direction
+    return {
+      ...buoyData,
+      dominantPeriod:    modelData.dominantPeriod,
+      swellDirection:    modelData.swellDirection,
+      swellDirectionDeg: modelData.swellDirectionDeg,
+      _source: 'hybrid',
+      _modelHeight: modelData.waveHeightFt,
+    };
+  }
+
+  // Diverge — log it and trust model
+  return {
+    ...modelData,
+    _source: 'model',
+    _buoyHeight: buoyData.waveHeightFt,
+    _divergence: `buoy ${buoyData.waveHeightFt}ft vs model ${modelData.waveHeightFt}ft`,
+  };
+}
+
 // ── Main ──────────────────────────────────────────────────────
 
 async function fetchSpotConditions(spot) {
-  const src = spot.dataSource || 'noaa';
-  const [buoy, wind, tideData] = await Promise.all([
-    src==='openmeteo' ? fetchOpenMeteoMarine(spot.lat, spot.lon) : fetchNoaaBuoy(spot.buoyId),
+  // Always fetch wind and tide in parallel — these never change
+  const [wind, tideData] = await Promise.all([
     fetchWindData(spot.lat, spot.lon),
     fetchTideData(spot.tideStation),
   ]);
+
+  // For spots already set to openmeteo-only (e.g. remote Hawaii
+  // spots with no nearby buoy), skip the hybrid and just use model
+  if (spot.dataSource === 'openmeteo') {
+    const buoy = await fetchOpenMeteoMarine(spot.lat, spot.lon);
+    buoy._source = 'model';
+    const result = scoreConditions(spot, buoy, wind, tideData);
+    return { spot, buoy, wind, tideData, score:result };
+  }
+
+  // Hybrid: fetch NOAA buoy and Open-Meteo simultaneously
+  const [buoyResult, modelResult] = await Promise.allSettled([
+    fetchNoaaBuoyWithFallback(spot),
+    fetchOpenMeteoMarine(spot.lat, spot.lon),
+  ]);
+
+  const buoyOk  = buoyResult.status  === 'fulfilled';
+  const modelOk = modelResult.status === 'fulfilled';
+
+  let buoy;
+  if (buoyOk && modelOk) {
+    // Both succeeded — apply selection logic
+    buoy = selectBestData(buoyResult.value, modelResult.value);
+  } else if (buoyOk) {
+    buoy = { ...buoyResult.value, _source: 'buoy' };
+  } else if (modelOk) {
+    buoy = { ...modelResult.value, _source: 'model' };
+  } else {
+    // Both failed — re-throw the buoy error so checker logs it
+    throw buoyResult.reason;
+  }
+
   const result = scoreConditions(spot, buoy, wind, tideData);
   return { spot, buoy, wind, tideData, score:result };
 }
 
 module.exports = { fetchSpotConditions, degreesToCompass, scoreConditions, MAX_WIND_KTS };
+
