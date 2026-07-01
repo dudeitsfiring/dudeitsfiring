@@ -65,28 +65,113 @@ function buildEmailBody(spot, conditions, unsubscribeUrl) {
 }
 
 // ── Welcome email body ────────────────────────────────────────
-function buildWelcomeEmailBody(spotNames, unsubscribeUrl) {
+function buildWelcomeEmailBody(firstName, spotNames, unsubscribeUrl) {
+  const greeting = firstName ? firstName : 'there';
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f5f5f0;font-family:system-ui,sans-serif;">
-  <div style="max-width:520px;margin:32px auto;background:white;border-radius:12px;overflow:hidden;">
-    <div style="background:#0A5C45;padding:24px 28px;">
-      <p style="margin:0;color:#7ECFB3;font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;">Dude, It's Firing!</p>
-      <h1 style="margin:8px 0 0;color:white;font-size:26px;font-weight:700;">🤙 You're in!</h1>
-      <p style="margin:6px 0 0;color:#A8DDD0;font-size:14px;">We're watching your spots 24/7.</p>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>You're in.</title>
+  <style>
+    body { margin:0;padding:0;background:#F0F4F8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; }
+    .wrapper { max-width:600px;margin:40px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08); }
+    .hero img { width:100%;display:block; }
+    .hero-text { background:#ffffff;padding:32px 40px 8px;text-align:center; }
+    .hero-text h1 { color:#0D2B45;font-size:38px;font-weight:900;margin:0 0 8px;letter-spacing:-0.5px; }
+    .hero-text p { color:#4A5568;font-size:16px;margin:0; }
+    .body { padding:32px 40px 40px; }
+    .greeting { font-size:18px;color:#0D2B45;font-weight:700;margin-bottom:16px; }
+    .body p { font-size:15px;color:#4A5568;line-height:1.7;margin:0 0 20px; }
+    .spots-box { background:#F0F8F4;border-left:4px solid #0A5C45;border-radius:0 12px 12px 0;padding:16px 20px;margin:20px 0;font-size:14px;font-weight:600;color:#0A5C45;line-height:1.6; }
+    .alert-preview { background:#F0F7FF;border-left:4px solid #007AFF;border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0; }
+    .alert-time { font-size:12px;color:#888;margin-bottom:8px; }
+    .alert-bubble { background:#007AFF;color:white;border-radius:18px 18px 18px 4px;padding:14px 18px;display:inline-block;font-size:14px;line-height:1.6;max-width:100%; }
+    .alert-bubble strong { display:block;font-size:16px;margin-bottom:4px; }
+    .section-title { font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#007AFF;margin:32px 0 12px; }
+    .expect-item { display:flex;gap:14px;margin-bottom:16px;align-items:flex-start; }
+    .expect-icon { font-size:20px;flex-shrink:0;margin-top:2px; }
+    .expect-text { font-size:14px;color:#4A5568;line-height:1.6; }
+    .expect-text strong { color:#0D2B45; }
+    .share-box { background:#FFF8ED;border:1.5px solid #FFD97A;border-radius:12px;padding:24px;margin:32px 0;text-align:center; }
+    .share-box p { font-size:14px;color:#7A5C00;margin:0 0 16px;line-height:1.6; }
+    .share-btn { display:inline-block;background:#007AFF;color:white;text-decoration:none;padding:12px 28px;border-radius:100px;font-size:14px;font-weight:600; }
+    .bottom-wave img { width:100%;display:block; }
+    .bottom-bar { background:#ffffff;padding:24px 40px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px; }
+    .bottom-bar img { width:160px;height:auto;flex-shrink:0; }
+    .bottom-bar-text { font-size:12px;color:#888;line-height:1.7;text-align:right; }
+    .bottom-bar-text a { color:#888;text-decoration:underline; }
+    @media(max-width:600px){
+      .wrapper{margin:0;border-radius:0;}
+      .hero-text{padding:24px 20px 4px;}
+      .hero-text h1{font-size:28px;}
+      .body{padding:24px 20px 32px;}
+      .bottom-bar{flex-direction:column;align-items:flex-start;padding:20px;}
+      .bottom-bar-text{text-align:left;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="hero">
+      <img src="https://dudeitsfiring.com/final-bg.jpg" alt="firing waves">
     </div>
-    <div style="padding:24px 28px;">
-      <p style="font-size:15px;color:#333;line-height:1.7;margin:0 0 16px;">You're now connected to:</p>
-      <div style="background:#F0F8F4;border-left:3px solid #0A5C45;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:20px;">
-        <p style="margin:0;font-size:14px;font-weight:600;color:#0A5C45;line-height:1.6;">${spotNames}</p>
+    <div class="hero-text">
+      <h1>You're in. 🤙</h1>
+      <p>We're watching your spots right now.</p>
+    </div>
+    <div class="body">
+      <p class="greeting">Hey ${greeting},</p>
+      <p>Welcome to the crew. From this moment on, we're watching your spots around the clock — wave height, swell direction, wind, tide — all of it. The second conditions hit firing levels, you'll get a text. No checking, no forecasting, no wasted drives.</p>
+      <div class="spots-box">${spotNames}</div>
+      <p>This is what that text looks like when it lands:</p>
+      <div class="alert-preview">
+        <div class="alert-time">Today 6:47 AM</div>
+        <div class="alert-bubble">
+          <strong>🤙 Dude, It's Firing!! 🔥</strong>
+          Trestles · 5ft · 13s · SW swell 🌊<br>
+          Glassy · Tide dropping perfectly<br>
+          GO NOW! — conditions are dialed 🏄
+        </div>
       </div>
-      <p style="font-size:15px;color:#333;line-height:1.7;margin:0 0 12px;">The moment any of them are genuinely worth paddling out — you'll get an alert. No false alarms. No spam. Just the real thing.</p>
-      <p style="font-size:14px;color:#666;line-height:1.6;margin:0;font-style:italic;">Surf can be seasonal — if it's quiet for a few weeks, that's normal. When we send an alert, go surf.</p>
+      <p>When you see that — move. We never send it unless it means it.</p>
+      <div class="section-title">What to expect</div>
+      <div class="expect-item">
+        <div class="expect-icon">📅</div>
+        <div class="expect-text"><strong>Alerts are seasonal.</strong> Your spots fire when the swell cooperates — NorCal and Hawaii go off in fall and winter, the East Coast peaks in late summer through fall, and SoCal catches south swells in summer. If it's quiet for a few weeks, that's normal. When it fires, you'll know.</div>
+      </div>
+      <div class="expect-item">
+        <div class="expect-icon">⏰</div>
+        <div class="expect-text"><strong>Texts arrive between 6am and 8pm local time only.</strong> Nobody needs a 3am wake-up call. We check conditions every few hours and only alert during daylight.</div>
+      </div>
+      <div class="expect-item">
+        <div class="expect-icon">🚫</div>
+        <div class="expect-text"><strong>We never cry wolf.</strong> Our threshold is strict — wave height, period, swell direction, wind, and tide all have to line up. You won't get a text for mediocre surf. When we say it's firing, it's firing.</div>
+      </div>
+      <div class="expect-item">
+        <div class="expect-icon">📱</div>
+        <div class="expect-text"><strong>To stop alerts anytime,</strong> just reply STOP to any text. No apps, no logins, no hassle.</div>
+      </div>
+      <div class="share-box">
+        <p>🤙 <strong>Know someone who's missing sessions?</strong><br>
+        Your surf crew should be in on this. Send them the link — for every friend who signs up, you're basically the hero who got them out of bed on the best morning of the year.</p>
+        <a href="https://dudeitsfiring.com" class="share-btn">Share dudeitsfiring.com</a>
+      </div>
+      <p>That's it. No dashboard to check, no app to download, no forecast to interpret. Just go surf when we tell you to.</p>
+      <p>See you in the water. 🌊</p>
+      <p style="color:#0D2B45;font-weight:700;">— The Dude It's Firing crew</p>
     </div>
-    <div style="padding:16px 28px;background:#f9f9f7;border-top:1px solid #eee;">
-      <p style="margin:0;font-size:12px;color:#999;">
-        You subscribed to Dude, It's Firing! · <a href="${unsubscribeUrl}" style="color:#0A5C45;">Unsubscribe</a>
-      </p>
+    <div class="bottom-wave">
+      <img src="https://dudeitsfiring.com/wave-bg.jpg" alt="waves">
+    </div>
+    <div class="bottom-bar">
+      <img src="https://dudeitsfiring.com/logo.png" alt="Dude, It's Firing!">
+      <div class="bottom-bar-text">
+        You're receiving this because you signed up at <a href="https://dudeitsfiring.com">dudeitsfiring.com</a><br>
+        To unsubscribe from surf alerts, reply STOP to any text.<br>
+        <a href="${unsubscribeUrl}">Unsubscribe from emails</a><br>
+        © 2026 Dude, It's Firing! · Carmel-by-the-Sea, CA
+      </div>
     </div>
   </div>
 </body></html>`.trim();
@@ -107,13 +192,13 @@ async function sendEmail(to, spot, conditions, token, baseUrl) {
 }
 
 // ── Send welcome email ────────────────────────────────────────
-async function sendWelcomeEmail(to, spotNames, token, baseUrl) {
+async function sendWelcomeEmail(to, firstName, spotNames, token, baseUrl) {
   const unsubUrl = `${baseUrl}/unsubscribe/${token}`;
   const { error } = await getResend().emails.send({
     from:    FROM,
     to,
-    subject: `🤙 You're connected to Dude, It's Firing!`,
-    html:    buildWelcomeEmailBody(spotNames, unsubUrl),
+    subject: `🤙 You're in — Dude, It's Firing! is watching your spots`,
+    html:    buildWelcomeEmailBody(firstName, spotNames, unsubUrl),
   });
   if (error) throw new Error(error.message);
   console.log(`  ✉️  Welcome email sent to ${to}`);
@@ -191,10 +276,10 @@ async function sendWelcome(subscriber, baseUrl, { spotNames, token }) {
   if (subscriber.type === 'sms') {
     await sendWelcomeSMS(subscriber, spotList, baseUrl);
   } else if (subscriber.type === 'email') {
-    await sendWelcomeEmail(subscriber.contact, spotNames, token, baseUrl);
+    await sendWelcomeEmail(subscriber.contact, subscriber.name, spotNames, token, baseUrl);
   } else if (subscriber.type === 'both') {
     await sendWelcomeSMS(subscriber, spotList, baseUrl);
-    await sendWelcomeEmail(subscriber.both_email, spotNames, token, baseUrl);
+    await sendWelcomeEmail(subscriber.both_email, subscriber.name, spotNames, token, baseUrl);
   }
 }
 
