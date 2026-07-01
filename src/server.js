@@ -141,7 +141,7 @@ app.post('/webhook', async (req, res) => {
       try {
         // Idempotency guard — if this subscription ID already exists, skip
         // Stripe can deliver the same webhook event more than once
-        const existing = db.getSubscriberByStripeId(session.subscription);
+        const existing = getSubscriberByStripeId(session.subscription);
         if (existing) {
           console.log(`⚠️ Duplicate webhook for subscription ${session.subscription} — skipping`);
           break;
@@ -149,7 +149,7 @@ app.post('/webhook', async (req, res) => {
 
         // Duplicate contact guard — deactivate any existing active record
         // with the same phone/email so they don't get double alerts
-        db.deactivateByContact(contact);
+        deactivateByContact(contact);
 
         const token = db.addSubscriber({
           name,
