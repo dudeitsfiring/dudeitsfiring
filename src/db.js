@@ -15,16 +15,17 @@ try {
   db.pragma('journal_mode = WAL');
   db.exec(`
     CREATE TABLE IF NOT EXISTS subscribers (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      name        TEXT NOT NULL,
-      contact     TEXT NOT NULL,
-      type        TEXT NOT NULL CHECK(type IN ('sms','email','both')),
-      tier        TEXT NOT NULL DEFAULT 'locals',
-      spots       TEXT NOT NULL,
-      active      INTEGER DEFAULT 1,
-      token       TEXT UNIQUE,
-      both_email  TEXT,
-      created_at  TEXT DEFAULT (datetime('now'))
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      name                  TEXT NOT NULL,
+      contact               TEXT NOT NULL,
+      type                  TEXT NOT NULL CHECK(type IN ('sms','email','both')),
+      tier                  TEXT NOT NULL DEFAULT 'locals',
+      spots                 TEXT NOT NULL,
+      active                INTEGER DEFAULT 1,
+      token                 TEXT UNIQUE,
+      both_email            TEXT,
+      stripe_subscription_id TEXT,
+      created_at            TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS alert_log (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,6 +37,7 @@ try {
   `);
   try { db.exec(`ALTER TABLE subscribers ADD COLUMN tier TEXT NOT NULL DEFAULT 'locals'`); } catch(e) {}
   try { db.exec(`ALTER TABLE subscribers ADD COLUMN both_email TEXT`); } catch(e) {}
+  try { db.exec(`ALTER TABLE subscribers ADD COLUMN stripe_subscription_id TEXT`); } catch(e) {}
   console.log('DB: using better-sqlite3');
 } catch(e) {
   useJSON = true;
@@ -69,8 +71,8 @@ function addSubscriber({ name, contact, type, tier, spots, stripeSubscriptionId,
   const created_at = new Date().toISOString();
 
   if (!useJSON) {
-    db.prepare(`INSERT INTO subscribers (name,contact,type,tier,spots,token,both_email) VALUES (@name,@contact,@type,@tier,@spots,@token,@both_email)`)
-      .run({ name, contact, type, tier: tier||'locals', spots: JSON.stringify(spots), token, both_email: bothEmail||null });
+    db.prepare(`INSERT INTO subscribers (name,contact,type,tier,spots,token,both_email,stripe_subscription_id) VALUES (@name,@contact,@type,@tier,@spots,@token,@both_email,@stripe_subscription_id)`)
+      .run({ name, contact, type, tier: tier||'locals', spots: JSON.stringify(spots), token, both_email: bothEmail||null, stripe_subscription_id: stripeSubscriptionId||null });
   } else {
     const data = loadJSON();
     data.subscribers.push({ id: data.nextId++, name, contact, type, tier: tier||'locals', spots: JSON.stringify(spots), token, both_email: bothEmail||null, stripe_subscription_id: stripeSubscriptionId||null, active: 1, created_at });
@@ -147,8 +149,29 @@ function deactivateByStripeId(stripeSubscriptionId) {
   }
 }
 
+function getSubscriberByStripeId(stripeSubscriptionId) {
+  if (!stripeSubscriptionId) return null;
+  if (!useJSON) {
+    return db.prepare(`SELECT * FROM subscribers WHERE stripe_subscription_id = ? LIMIT 1`).get(stripeSubscriptionId) || null;
+  } else {
+    return loadJSON().subscribers.find(s => s.stripe_subscription_id === stripeSubscriptionId) || null;
+  }
+}
+
+function deactivateByContact(contact) {
+  if (!contact) return;
+  if (!useJSON) {
+    db.prepare(`UPDATE subscribers SET active = 0 WHERE contact = ? AND active = 1`).run(contact);
+  } else {
+    const data = loadJSON();
+    data.subscribers.forEach(s => { if (s.contact === contact && s.active) s.active = 0; });
+    saveJSON(data);
+  }
+}
+
 module.exports = {
   addSubscriber, getSubscribersForSpot, unsubscribe, deactivateByStripeId,
+  deactivateByContact, getSubscriberByStripeId,
   getAllSubscribers, wasAlertedRecently, logAlert, getRecentAlerts,
   TIERS, spotLimitForTier,
 };

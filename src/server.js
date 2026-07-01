@@ -4,7 +4,6 @@ const cors     = require('cors');
 const cron     = require('node-cron');
 const path     = require('path');
 const db       = require('./db');
-const { getSubscriberByStripeId, deactivateByContact } = db;
 const { checkAllSpots } = require('./checker');
 const { notify } = require('./notifier');
 const { createCheckoutSession, handleWebhook, endTrialNow } = require('./stripe');
@@ -139,18 +138,6 @@ app.post('/webhook', async (req, res) => {
       const session = event.data.object;
       const { name, contact, type, tier, spots, optEmail, bothEmail } = session.metadata;
       try {
-        // Idempotency guard — if this subscription ID already exists, skip
-        // Stripe can deliver the same webhook event more than once
-        const existing = getSubscriberByStripeId(session.subscription);
-        if (existing) {
-          console.log(`⚠️ Duplicate webhook for subscription ${session.subscription} — skipping`);
-          break;
-        }
-
-        // Duplicate contact guard — deactivate any existing active record
-        // with the same phone/email so they don't get double alerts
-        deactivateByContact(contact);
-
         const token = db.addSubscriber({
           name,
           contact,
