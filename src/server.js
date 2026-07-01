@@ -80,23 +80,25 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '..', 'publi
 
 // ── Subscribe → create Stripe checkout session ────────────────
 app.post('/subscribe', async (req, res) => {
-  const { name, contact, type, tier, spots: spotIds, optEmail } = req.body;
+  const { name, contact, type, tier, spots: spotIds, optEmail, bothEmail } = req.body;
 
-  // Normalize phone number — ensure + prefix
-  const normalizedContact = (type === 'sms' && contact && !contact.startsWith('+'))
+  // Normalize phone number — ensure + prefix for sms and both
+  const normalizedContact = ((type === 'sms' || type === 'both') && contact && !contact.startsWith('+'))
     ? '+' + contact.replace(/[^0-9]/g, '')
     : contact;
 
   if (!name || !contact || !type || !spotIds || !spotIds.length)
     return res.status(400).json({ error: 'Missing required fields' });
-  if (!['sms','email'].includes(type))
-    return res.status(400).json({ error: 'type must be sms or email' });
+  if (!['sms','email','both'].includes(type))
+    return res.status(400).json({ error: 'type must be sms, email, or both' });
   if (!['locals','coast','nomad'].includes(tier||'locals'))
     return res.status(400).json({ error: 'Invalid tier' });
-  if (type==='email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact))
+  if (type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact))
     return res.status(400).json({ error: 'Invalid email address' });
-  if (type==='sms' && !/^\+?[1-9]\d{7,14}$/.test(contact.replace(/[\s\-\(\)]/g,'')))
+  if ((type === 'sms' || type === 'both') && !/^\+?[1-9]\d{7,14}$/.test(contact.replace(/[\s\-\(\)]/g,'')))
     return res.status(400).json({ error: 'Invalid phone number — use +1xxxxxxxxxx format' });
+  if (type === 'both' && (!bothEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bothEmail)))
+    return res.status(400).json({ error: 'Invalid email address for Both option' });
 
   const validIds = new Set(allSpots.map(s => s.id));
   const invalidSpots = spotIds.filter(id => !validIds.has(id));
@@ -106,7 +108,7 @@ app.post('/subscribe', async (req, res) => {
   try {
     // Create Stripe checkout session — user pays after trial
     const session = await createCheckoutSession({
-      name, contact: normalizedContact, type, tier: tier||'locals', spots: spotIds, optEmail: optEmail||null, baseUrl: BASE_URL
+      name, contact: normalizedContact, type, tier: tier||'locals', spots: spotIds, optEmail: optEmail||null, bothEmail: bothEmail||null, baseUrl: BASE_URL
     });
     res.json({ success: true, checkoutUrl: session.url });
   } catch(err) {
@@ -134,7 +136,7 @@ app.post('/webhook', async (req, res) => {
     case 'checkout.session.completed': {
       // Payment setup complete — add subscriber to database
       const session = event.data.object;
-      const { name, contact, type, tier, spots, optEmail } = session.metadata;
+      const { name, contact, type, tier, spots, optEmail, bothEmail } = session.metadata;
       try {
         const token = db.addSubscriber({
           name,
@@ -143,6 +145,7 @@ app.post('/webhook', async (req, res) => {
           tier: tier || 'locals',
           spots: JSON.parse(spots),
           stripeSubscriptionId: session.subscription,
+          bothEmail: bothEmail || null,
         });
 
         // Send welcome text/email immediately
@@ -151,16 +154,16 @@ app.post('/webhook', async (req, res) => {
           .map(id => allSpots.find(s => s.id === id)?.name || id)
           .join(', ');
 
-        const welcomeSub = { id: null, name, contact, type, tier };
+        const welcomeSub = { id: null, name, contact, type, tier, both_email: bothEmail || null };
         await notify(welcomeSub, null, null, BASE_URL, {
           isWelcome: true,
           spotNames,
           token,
         });
 
-        // Add to Klaviyo email list — either their primary email (if type=email)
-        // or their optional opted-in email (if type=sms and they checked the box)
-        const emailForKlaviyo = type === 'email' ? contact : (optEmail || null);
+        // Add to Klaviyo — primary email if type=email, bothEmail if type=both,
+        // optEmail if type=sms and they checked the box
+        const emailForKlaviyo = type === 'email' ? contact : (type === 'both' ? bothEmail : (optEmail || null));
         if (emailForKlaviyo) {
           await addToKlaviyo({ name, email: emailForKlaviyo });
         }

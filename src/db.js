@@ -18,11 +18,12 @@ try {
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       name        TEXT NOT NULL,
       contact     TEXT NOT NULL,
-      type        TEXT NOT NULL CHECK(type IN ('sms','email')),
+      type        TEXT NOT NULL CHECK(type IN ('sms','email','both')),
       tier        TEXT NOT NULL DEFAULT 'locals',
       spots       TEXT NOT NULL,
       active      INTEGER DEFAULT 1,
       token       TEXT UNIQUE,
+      both_email  TEXT,
       created_at  TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS alert_log (
@@ -34,6 +35,7 @@ try {
     );
   `);
   try { db.exec(`ALTER TABLE subscribers ADD COLUMN tier TEXT NOT NULL DEFAULT 'locals'`); } catch(e) {}
+  try { db.exec(`ALTER TABLE subscribers ADD COLUMN both_email TEXT`); } catch(e) {}
   console.log('DB: using better-sqlite3');
 } catch(e) {
   useJSON = true;
@@ -59,7 +61,7 @@ const TIERS = {
 function spotLimitForTier(tier) { return TIERS[tier]?.spotLimit ?? 5; }
 
 // ── Subscribers ───────────────────────────────────────────────
-function addSubscriber({ name, contact, type, tier, spots, stripeSubscriptionId }) {
+function addSubscriber({ name, contact, type, tier, spots, stripeSubscriptionId, bothEmail }) {
   const limit = spotLimitForTier(tier);
   if (spots.length > limit)
     throw new Error(`Tier "${tier}" allows max ${limit} spots. You selected ${spots.length}.`);
@@ -67,11 +69,11 @@ function addSubscriber({ name, contact, type, tier, spots, stripeSubscriptionId 
   const created_at = new Date().toISOString();
 
   if (!useJSON) {
-    db.prepare(`INSERT INTO subscribers (name,contact,type,tier,spots,token) VALUES (@name,@contact,@type,@tier,@spots,@token)`)
-      .run({ name, contact, type, tier: tier||'locals', spots: JSON.stringify(spots), token });
+    db.prepare(`INSERT INTO subscribers (name,contact,type,tier,spots,token,both_email) VALUES (@name,@contact,@type,@tier,@spots,@token,@both_email)`)
+      .run({ name, contact, type, tier: tier||'locals', spots: JSON.stringify(spots), token, both_email: bothEmail||null });
   } else {
     const data = loadJSON();
-    data.subscribers.push({ id: data.nextId++, name, contact, type, tier: tier||'locals', spots: JSON.stringify(spots), token, stripe_subscription_id: stripeSubscriptionId||null, active: 1, created_at });
+    data.subscribers.push({ id: data.nextId++, name, contact, type, tier: tier||'locals', spots: JSON.stringify(spots), token, both_email: bothEmail||null, stripe_subscription_id: stripeSubscriptionId||null, active: 1, created_at });
     saveJSON(data);
   }
   return token;

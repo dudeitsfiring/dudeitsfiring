@@ -164,21 +164,12 @@ function formatSpotList(spotNames) {
 async function sendWelcome(subscriber, baseUrl, { spotNames, token }) {
   const unsubUrl = `${baseUrl}/unsubscribe/${token}`;
   const spotList = formatSpotList(spotNames);
+  const twilio = require('twilio')(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
 
-  if (subscriber.type === 'sms') {
-    const twilio = require('twilio')(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
-    // Sent as MMS with the wave image — this is the ONE message in
-    // the whole system that justifies the extra MMS cost (~$0.02 vs
-    // ~$0.0079 for SMS), because it only fires once per subscriber,
-    // not repeatedly like the alert message. At ~18,000 subscribers
-    // over 2 years, this is roughly $360 total — trivial, and a much
-    // stronger first impression than plain text. The image lives on
-    // the public site already (final-bg.jpg — chosen over wave-bg.jpg
-    // because its landscape aspect ratio previews better in MMS
-    // thumbnails than the portrait-oriented alternative).
+  const sendWelcomeSMS = async () => {
     await twilio.messages.create({
       body: `🤙 You're in! Welcome to Dude It's Firing! We're watching ${spotList} right now — the second any of them are firing, you'll get a text. Surf can be seasonal so give it time if it's quiet. When we text, go SURF.`,
       mediaUrl: [`${baseUrl}/final-bg.jpg`],
@@ -186,10 +177,12 @@ async function sendWelcome(subscriber, baseUrl, { spotNames, token }) {
       to:   subscriber.contact,
     });
     console.log(`  📱 Welcome MMS sent to ${subscriber.contact}`);
-  } else if (subscriber.type === 'email') {
+  };
+
+  const sendWelcomeEmail = async (to) => {
     await getTransporter().sendMail({
       from:    process.env.EMAIL_FROM || 'Dude Its Firing <noreply@dudeitsfiring.com>',
-      to:      subscriber.contact,
+      to,
       subject: `🤙 You're connected to Dude, It's Firing!`,
       html: `<!DOCTYPE html><html><body style="font-family:system-ui;max-width:520px;margin:32px auto;padding:24px;background:#FAF8F3;">
         <h1 style="font-size:32px;color:#0D2B45">🤙 You're in!</h1>
@@ -200,7 +193,16 @@ async function sendWelcome(subscriber, baseUrl, { spotNames, token }) {
         <p style="font-size:12px;color:#999"><a href="${unsubUrl}" style="color:#1E6FA8">Unsubscribe</a></p>
       </body></html>`,
     });
-    console.log(`  ✉️  Welcome email sent to ${subscriber.contact}`);
+    console.log(`  ✉️  Welcome email sent to ${to}`);
+  };
+
+  if (subscriber.type === 'sms') {
+    await sendWelcomeSMS();
+  } else if (subscriber.type === 'email') {
+    await sendWelcomeEmail(subscriber.contact);
+  } else if (subscriber.type === 'both') {
+    await sendWelcomeSMS();
+    await sendWelcomeEmail(subscriber.both_email);
   }
 }
 
@@ -212,8 +214,16 @@ async function notify(subscriber, spot, conditions, baseUrl, options = {}) {
       await sendWelcome(subscriber, baseUrl, options);
       return true;
     }
-    if (subscriber.type === 'email') await sendEmail(subscriber, spot, conditions, baseUrl);
-    else if (subscriber.type === 'sms') await sendSMS(subscriber, spot, conditions, baseUrl);
+    if (subscriber.type === 'email') {
+      await sendEmail(subscriber, spot, conditions, baseUrl);
+    } else if (subscriber.type === 'sms') {
+      await sendSMS(subscriber, spot, conditions, baseUrl);
+    } else if (subscriber.type === 'both') {
+      await sendSMS(subscriber, spot, conditions, baseUrl);
+      // For email in 'both' mode, send to both_email field
+      const bothSub = { ...subscriber, contact: subscriber.both_email };
+      await sendEmail(bothSub, spot, conditions, baseUrl);
+    }
     return true;
   } catch (err) {
     console.error(`  ❌ Failed to notify ${subscriber.contact}:`, err.message);

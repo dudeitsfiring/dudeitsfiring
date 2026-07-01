@@ -10,7 +10,7 @@ const PRICE_CONFIG = {
 };
 
 // ── Create Stripe checkout session ────────────────────────────
-async function createCheckoutSession({ name, contact, type, tier, spots, optEmail, baseUrl }) {
+async function createCheckoutSession({ name, contact, type, tier, spots, optEmail, bothEmail, baseUrl }) {
   const config = PRICE_CONFIG[tier] || PRICE_CONFIG.locals;
 
   const session = await stripe.checkout.sessions.create({
@@ -29,7 +29,6 @@ async function createCheckoutSession({ name, contact, type, tier, spots, optEmai
       },
       quantity: 1,
     }],
-    // Trial period — first 30 days free OR until first alert fires
     subscription_data: {
       metadata: {
         name,
@@ -38,9 +37,10 @@ async function createCheckoutSession({ name, contact, type, tier, spots, optEmai
         tier,
         spots: JSON.stringify(spots),
         optEmail: optEmail || '',
+        bothEmail: bothEmail || '',
       },
     },
-    customer_email: type === 'email' ? contact : undefined,
+    customer_email: type === 'email' ? contact : (type === 'both' ? bothEmail : undefined),
     metadata: {
       name,
       contact,
@@ -48,6 +48,7 @@ async function createCheckoutSession({ name, contact, type, tier, spots, optEmai
       tier,
       spots: JSON.stringify(spots),
       optEmail: optEmail || '',
+      bothEmail: bothEmail || '',
     },
     success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/?cancelled=true`,
