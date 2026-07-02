@@ -30,7 +30,9 @@ async function addToKlaviyo({ name, email }) {
                 type: 'profile',
                 attributes: {
                   email,
-                  first_name: name,
+                  properties: {
+                    first_name: name,
+                  },
                   subscriptions: {
                     email: {
                       marketing: {
@@ -103,10 +105,22 @@ app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '..', 'publi
 app.post('/subscribe', async (req, res) => {
   const { name, contact, type, tier, spots: spotIds, optEmail, bothEmail } = req.body;
 
-  // Normalize phone number — ensure + prefix for sms and both
-  const normalizedContact = ((type === 'sms' || type === 'both') && contact && !contact.startsWith('+'))
-    ? '+' + contact.replace(/[^0-9]/g, '')
-    : contact;
+  // Normalize phone number — strip everything except digits, then ensure +1 prefix
+  // Site is US-only so all numbers should be +1XXXXXXXXXX (11 digits total)
+  let normalizedContact = contact;
+  if ((type === 'sms' || type === 'both') && contact) {
+    const digits = contact.replace(/[^0-9]/g, '');
+    if (digits.length === 10) {
+      // 10 digits — US number without country code, add +1
+      normalizedContact = '+1' + digits;
+    } else if (digits.length === 11 && digits.startsWith('1')) {
+      // 11 digits starting with 1 — US number with country code, add +
+      normalizedContact = '+' + digits;
+    } else {
+      // Already has + or other format — use as-is
+      normalizedContact = contact.startsWith('+') ? contact : '+' + digits;
+    }
+  }
 
   if (!name || !contact || !type || !spotIds || !spotIds.length)
     return res.status(400).json({ error: 'Missing required fields' });
