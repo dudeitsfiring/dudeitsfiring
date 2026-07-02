@@ -20,15 +20,37 @@ async function addToKlaviyo({ name, email }) {
   try {
     const axios = require('axios');
     await axios.post(
-      `https://a.klaviyo.com/api/lists/${listId}/relationships/profiles/`,
+      'https://a.klaviyo.com/api/profile-subscription-bulk-create-jobs/',
       {
-        data: [{
-          type: 'profile',
+        data: {
+          type: 'profile-subscription-bulk-create-job',
           attributes: {
-            email,
-            first_name: name,
+            profiles: {
+              data: [{
+                type: 'profile',
+                attributes: {
+                  email,
+                  first_name: name,
+                  subscriptions: {
+                    email: {
+                      marketing: {
+                        consent: 'SUBSCRIBED',
+                      },
+                    },
+                  },
+                },
+              }],
+            },
           },
-        }],
+          relationships: {
+            list: {
+              data: {
+                type: 'list',
+                id: listId,
+              },
+            },
+          },
+        },
       },
       {
         headers: {
@@ -40,7 +62,6 @@ async function addToKlaviyo({ name, email }) {
     );
     console.log(`📧 Added ${email} to Klaviyo list`);
   } catch (err) {
-    // Don't let a Klaviyo failure break the signup flow
     console.error('Klaviyo add failed:', err.response?.data || err.message);
   }
 }
